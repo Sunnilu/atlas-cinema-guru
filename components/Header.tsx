@@ -1,29 +1,42 @@
 "use client";
 
-import { signOut } from "next-auth/react";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
+import { signOut } from "next-auth/react";
+import Link from "next/link";
 
-interface HeaderProps {
-  user: {
-    email?: string | null;
-  };
-}
+export default function Header() {
+  const { data: session } = useSession();
 
-export default function Header({ user }: HeaderProps) {
   return (
-    <header className="flex items-center justify-between px-4 py-3 bg-[#00002a] shadow-md">
-      <div className="flex items-center space-x-2">
-        <Image src="/logo.png" alt="Logo" width={32} height={32} />
-        <span className="text-xl font-bold">Cinema Guru</span>
-      </div>
-      <div className="flex items-center space-x-4">
-        {user?.email && <span className="text-sm">{user.email}</span>}
-        <button
-          onClick={() => signOut()}
-          className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded"
-        >
-          Logout
-        </button>
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#00003c] py-3">
+      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
+        {/* Logo and App Title */}
+        <Link href="/" className="flex items-center gap-2">
+          <Image
+            src="/logo.png"
+            alt="Cinema Guru Logo"
+            width={36}
+            height={36}
+            className="rounded"
+          />
+          <span className="text-lg font-semibold text-white">
+            Cinema Guru
+          </span>
+        </Link>
+
+        {/* User Info */}
+        {session?.user ? (
+          <div className="flex items-center gap-4">
+            <p className="text-sm text-white">{session.user.email}</p>
+            <button
+              onClick={() => signOut()}
+              className="rounded bg-white px-3 py-1 text-sm font-medium text-[#00003c] hover:bg-gray-200"
+            >
+              Log out
+            </button>
+          </div>
+        ) : null}
       </div>
     </header>
   );
