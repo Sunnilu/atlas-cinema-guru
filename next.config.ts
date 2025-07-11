@@ -3,8 +3,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false, // Enforce type safety during build
   },
-  reactStrictMode: true, // Optional: helps catch issues in development
-  swcMinify: true,        // Optional: enables faster builds with SWC
+  reactStrictMode: true, // Helps catch issues in development
 };
 
 export default nextConfig;
