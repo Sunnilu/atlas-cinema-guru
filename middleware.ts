@@ -5,17 +5,23 @@ import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
   const session = await auth();
-
   const isAuthenticated = !!session?.user;
 
-  const isPublicFile =
-    request.nextUrl.pathname.startsWith("/api") ||
-    request.nextUrl.pathname.startsWith("/_next") ||
-    request.nextUrl.pathname.includes(".") ||
-    request.nextUrl.pathname === "/favicon.ico" ||
-    request.nextUrl.pathname === "/logo.png";
+  const publicPaths = [
+    "/api",
+    "/_next",
+    "/favicon.ico",
+    "/logo.png",
+    "/api/auth",
+    "/api/auth/signin",
+    "/api/auth/callback/github",
+  ];
 
-  if (isPublicFile) {
+  const isPublic = publicPaths.some((path) =>
+    request.nextUrl.pathname.startsWith(path)
+  ) || request.nextUrl.pathname.includes(".");
+
+  if (isPublic) {
     return NextResponse.next();
   }
 
@@ -28,5 +34,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next|favicon.ico|logo.png).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|logo.png).*)"],
 };
