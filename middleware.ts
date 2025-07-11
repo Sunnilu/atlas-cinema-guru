@@ -7,32 +7,26 @@ export async function middleware(request: NextRequest) {
   const session = await auth();
   const isAuthenticated = !!session?.user;
 
-  const publicPaths = [
-    "/api",
-    "/_next",
-    "/favicon.ico",
-    "/logo.png",
-    "/api/auth",
-    "/api/auth/signin",
-    "/api/auth/callback/github",
-  ];
+  const isPublicFile =
+    request.nextUrl.pathname.startsWith("/api") ||
+    request.nextUrl.pathname.startsWith("/_next") ||
+    request.nextUrl.pathname.includes(".") ||
+    request.nextUrl.pathname === "/favicon.ico" ||
+    request.nextUrl.pathname === "/logo.png";
 
-  const isPublic = publicPaths.some((path) =>
-    request.nextUrl.pathname.startsWith(path)
-  ) || request.nextUrl.pathname.includes(".");
+  const isAuthRoute = request.nextUrl.pathname.startsWith("/api/auth") ||
+                      request.nextUrl.pathname === "/login";
 
-  if (isPublic) {
+  // Allow access to static files, auth routes, and already authenticated users
+  if (isPublicFile || isAuthRoute || isAuthenticated) {
     return NextResponse.next();
   }
 
-  if (!isAuthenticated) {
-    const loginUrl = new URL("/api/auth/signin", request.url);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  return NextResponse.next();
+  // Redirect unauthenticated users to login page
+  const loginUrl = new URL("/api/auth/signin", request.url);
+  return NextResponse.redirect(loginUrl);
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|logo.png).*)"],
+  matcher: ["/((?!_next|favicon.ico|logo.png).*)"],
 };
