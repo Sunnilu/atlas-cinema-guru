@@ -15,14 +15,17 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-[#e6f5f2] text-[#00003c] antialiased`}>
-        <div className="group flex min-h-screen">
-          <Sidebar />
-          <div className="flex-1 p-6">
-            <Header />
-            <main className="bg-white rounded-2xl shadow-xl p-6 mt-4">
-              {children}
-            </main>
+      <body className={`${inter.className} bg-[#00003c] text-white antialiased`}>
+        <div className="group flex justify-center min-h-screen overflow-hidden">
+          <div
+            className="w-[1727px] h-[960px] border border-[#54F4D0] rounded-lg overflow-hidden flex"
+            style={{ opacity: 1 }}
+          >
+            <Sidebar />
+            <div className="flex-1 flex flex-col">
+              <Header />
+              <main className="flex-1 p-6">{children}</main>
+            </div>
           </div>
         </div>
       </body>
