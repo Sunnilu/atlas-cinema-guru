@@ -1,49 +1,48 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
 import { useSession } from "next-auth/react";
-import { db } from "@/lib/firebase"; // adjust path as needed
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  getDocs,
-} from "firebase/firestore";
+import { db } from "@/lib/firebase"; // ensure this points to your Firestore instance
 
-interface Activity {
-  id: string;
-  user: string;
+type Activity = {
   title: string;
-  timestamp: any;
-}
+  timestamp: {
+    seconds: number;
+  };
+  type: "favorite" | "watch-later";
+};
 
 export default function Sidebar() {
   const [expanded, setExpanded] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const userEmail = session?.user?.email ?? null;
 
   useEffect(() => {
-    const userEmail = session?.user?.email ?? null;
     if (!userEmail) return;
 
     const fetchActivities = async () => {
-      const q = query(
-        collection(db, "activities"),
-        where("user", "==", userEmail),
-        orderBy("timestamp", "desc")
-      );
-      const querySnapshot = await getDocs(q);
-      const items: Activity[] = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as Omit<Activity, "id">),
-      }));
-      setActivities(items);
+      try {
+        const q = query(
+          collection(db, "activities"),
+          where("user", "==", userEmail),
+          orderBy("timestamp", "desc")
+        );
+        const querySnapshot = await getDocs(q);
+        const data: Activity[] = [];
+        querySnapshot.forEach((doc) => {
+          data.push(doc.data() as Activity);
+        });
+        setActivities(data);
+      } catch (error) {
+        console.error("❌ Error fetching activities:", error);
+      }
     };
 
     fetchActivities();
-  }, [session]);
+  }, [userEmail]);
 
   return (
     <aside
@@ -55,25 +54,43 @@ export default function Sidebar() {
     >
       <nav className="flex flex-col items-start p-4 space-y-4">
         <Link href="/" className="hover:underline font-medium transition-colors">
-          🏠 {expanded && "Home"}
+          📁 {expanded && "Home"}
         </Link>
         <Link href="/favorites" className="hover:underline font-medium transition-colors">
-          ❤️ {expanded && "Favorites"}
+          ⭐ {expanded && "Favorites"}
         </Link>
         <Link href="/watch-later" className="hover:underline font-medium transition-colors">
-          ⏰ {expanded && "Watch Later"}
+          🕒 {expanded && "Watch Later"}
         </Link>
 
-        <div className="mt-8 text-xs font-semibold text-[#00003c]/70">
-          {expanded && "Activity Feed"}
-        </div>
-
-        {expanded && activities.length > 0 && (
-          <ul className="text-sm mt-2 space-y-1">
-            {activities.map((log) => (
-              <li key={log.id}>• {log.title}</li>
-            ))}
-          </ul>
+        {expanded && (
+          <div className="mt-8">
+            <h3 className="text-center text-base font-bold">Latest Activities</h3>
+            <ul className="text-sm mt-2 space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
+              {activities.length > 0 ? (
+                activities.map((log, index) => (
+                  <li key={index}>
+                    <div className="text-xs">
+                      {new Date(log.timestamp.seconds * 1000).toLocaleString()}
+                    </div>
+                    <div>
+                      {log.type === "watch-later" ? (
+                        <>
+                          Added <strong>{log.title}</strong> to watch later
+                        </>
+                      ) : (
+                        <>
+                          Favorited <strong>{log.title}</strong>
+                        </>
+                      )}
+                    </div>
+                  </li>
+                ))
+              ) : (
+                <li className="text-xs italic text-gray-600">No recent activity</li>
+              )}
+            </ul>
+          </div>
         )}
       </nav>
     </aside>
