@@ -15,13 +15,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-[#00003c] text-white antialiased`}>
+      <body className={`${inter.className} bg-[#e6f5f2] text-[#00003c] antialiased`}>
         <div className="group flex min-h-screen">
-          {/* Sidebar with group-hover behavior */}
           <Sidebar />
-          <div className="flex-1">
+          <div className="flex-1 p-6">
             <Header />
-            <main className="p-4">{children}</main>
+            <main className="bg-white rounded-2xl shadow-xl p-6 mt-4">
+              {children}
+            </main>
           </div>
         </div>
       </body>
