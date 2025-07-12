@@ -16,9 +16,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={`${inter.className} bg-[#00003c] text-white antialiased`}>
-        <div className="group flex justify-center min-h-screen overflow-hidden">
+        <div className="flex justify-center items-center min-h-screen bg-[#00003c]">
           <div
-            className="w-[1727px] h-[960px] border border-[#54F4D0] rounded-lg overflow-hidden flex"
+            className="w-[1726px] h-[958px] border border-[#54F4D0] rounded-lg overflow-hidden flex"
             style={{ opacity: 1 }}
           >
             <Sidebar />
