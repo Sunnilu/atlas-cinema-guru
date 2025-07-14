@@ -7,7 +7,7 @@ export async function fetchMovies(): Promise<Movie[]> {
   return snapshot.docs.map((doc) => {
     const data = doc.data();
     return {
-      id: Number(doc.id), // Convert Firestore string ID to number
+      id: doc.id, // Keep Firestore string ID as string
       title: data.title,
       synopsis: data.synopsis,
       released: data.released,
