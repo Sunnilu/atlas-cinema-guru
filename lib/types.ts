@@ -1,9 +1,8 @@
-// lib/types.ts
 export type Movie = {
-  id: number;
+  id: string; // Firebase uses string IDs
   title: string;
-  synopsis: string; // changed from description
-  released: number; // changed from releaseYear
+  synopsis: string;
+  released: number;
   genres: string[];
   image: string;
   isFavorite?: boolean;
