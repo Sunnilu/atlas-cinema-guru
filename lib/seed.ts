@@ -1,5 +1,5 @@
 import { db } from "@vercel/postgres";
-import { titles } from "@/seed/titles"; // adjust the import path if needed
+import { titles } from "@/seed/titles";
 
 async function seedTitles(client: any) {
   await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
@@ -76,7 +76,21 @@ async function seedActivity(client: any) {
   console.log("✅ Activities table created.");
 }
 
-async function main() {
+export async function commit() {
+  const client = await db.connect();
+  await client.sql`COMMIT;`;
+  console.log("✅ Commit complete.");
+}
+
+export async function rollback() {
+  const client = await db.connect();
+  await client.sql`ROLLBACK;`;
+  console.log("🔁 Rollback complete.");
+}
+
+export { seedActivity };
+
+export default async function main() {
   const client = await db.connect();
 
   try {
@@ -89,7 +103,6 @@ async function main() {
   } catch (err) {
     console.error("❌ Seeding failed:", err);
   }
-  
 }
 
 main();
