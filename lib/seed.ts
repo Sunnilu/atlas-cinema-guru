@@ -1,21 +1,7 @@
 import { db } from "@vercel/postgres";
-import { titles } from "@/seed/titles";
+import { titles } from "@/seed/titles"; // adjust the import path if needed
 
-const client = await db.connect();
-
-export function begin() {
-  client.sql`BEGIN`;
-}
-
-export function commit() {
-  client.sql`COMMIT`;
-}
-
-export function rollback() {
-  client.sql`ROLLBACK`;
-}
-
-export async function seedTitles() {
+async function seedTitles(client: any) {
   await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
 
   await client.sql`
@@ -28,25 +14,22 @@ export async function seedTitles() {
     );
   `;
 
-  const insertedTitles = await Promise.all(
-    titles.map((title) => {
-      try {
-        client.sql`
-          INSERT INTO titles (id, title, synopsis, released, genre)
-          VALUES (${title.id}, ${title.title}, ${title.synopsis}, ${title.released}, ${title.genre})
-          ON CONFLICT (id) DO NOTHING;
-        `;
-      } catch (error) {
-        console.log("Error inserting title:", title.id);
-        console.log(error);
-      }
-    })
-  );
+  for (const title of titles) {
+    try {
+      await client.sql`
+        INSERT INTO titles (id, title, synopsis, released, genre)
+        VALUES (${title.id}, ${title.title}, ${title.synopsis}, ${title.released}, ${title.genre})
+        ON CONFLICT (id) DO NOTHING;
+      `;
+    } catch (error) {
+      console.error(`❌ Error inserting title: ${title.id}`, error);
+    }
+  }
 
-  return insertedTitles;
+  console.log("✅ Titles table seeded.");
 }
 
-export async function seedFavorites() {
+async function seedFavorites(client: any) {
   await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
 
   await client.sql`
@@ -57,9 +40,11 @@ export async function seedFavorites() {
       FOREIGN KEY (title_id) REFERENCES titles(id)
     );
   `;
+
+  console.log("✅ Favorites table created.");
 }
 
-export async function seedWatchLater() {
+async function seedWatchLater(client: any) {
   await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
 
   await client.sql`
@@ -70,9 +55,11 @@ export async function seedWatchLater() {
       FOREIGN KEY (title_id) REFERENCES titles(id)
     );
   `;
+
+  console.log("✅ WatchLater table created.");
 }
 
-export async function seedActivity() {
+async function seedActivity(client: any) {
   await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
 
   await client.sql`
@@ -85,4 +72,24 @@ export async function seedActivity() {
       FOREIGN KEY (title_id) REFERENCES titles(id)
     );
   `;
+
+  console.log("✅ Activities table created.");
 }
+
+async function main() {
+  const client = await db.connect();
+
+  try {
+    console.log("🌱 Starting database seeding...");
+    await seedTitles(client);
+    await seedFavorites(client);
+    await seedWatchLater(client);
+    await seedActivity(client);
+    console.log("🌟 Seeding complete!");
+  } catch (err) {
+    console.error("❌ Seeding failed:", err);
+  }
+  
+}
+
+main();
