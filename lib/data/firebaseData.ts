@@ -1,34 +1,37 @@
 // lib/data/firebaseData.ts
+
 import { db } from '@/lib/firebase';
 import {
-  collection,
-  getDocs,
-  query,
-  where,
-  limit,
-  startAfter,
-  orderBy,
   doc,
+  setDoc,
+  deleteDoc,
   getDoc,
+  Firestore,
 } from 'firebase/firestore';
 
-export async function fetchTitles(userId: string) {
-  try {
-    const titlesRef = collection(db, 'titles');
-    const snapshot = await getDocs(query(titlesRef, orderBy('released', 'desc')));
+/**
+ * Add a movie to user's favorites
+ */
+export async function insertFavorite(userId: string, movieId: string): Promise<void> {
+  const favoriteRef = doc(db, 'users', userId, 'favorites', movieId);
+  await setDoc(favoriteRef, {
+    addedAt: Date.now(),
+  });
+}
 
-    const titles = snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        image: data.image || `/images/${doc.id}.webp`,
-      };
-    });
+/**
+ * Remove a movie from user's favorites
+ */
+export async function deleteFavorite(userId: string, movieId: string): Promise<void> {
+  const favoriteRef = doc(db, 'users', userId, 'favorites', movieId);
+  await deleteDoc(favoriteRef);
+}
 
-    return titles;
-  } catch (error) {
-    console.error('Firestore Error:', error);
-    throw new Error('Failed to fetch titles.');
-  }
+/**
+ * Check if a movie is favorited
+ */
+export async function isFavorite(userId: string, movieId: string): Promise<boolean> {
+  const favoriteRef = doc(db, 'users', userId, 'favorites', movieId);
+  const snapshot = await getDoc(favoriteRef);
+  return snapshot.exists();
 }
