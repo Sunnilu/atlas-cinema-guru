@@ -1,6 +1,8 @@
 'use client';
 
 import type { Movie } from '@/lib/types';
+import { insertFavorite, deleteFavorite } from '@/lib/data/firebaseData';
+
 import { useState } from 'react';
 import { FaRegStar, FaStar, FaRegClock, FaClock } from 'react-icons/fa';
 
