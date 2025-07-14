@@ -1,6 +1,6 @@
 'use client';
 
-import { Movie } from '@/lib/hooks/useMovies';
+import type { Movie } from '@/lib/types';
 import { useState } from 'react';
 import { FaRegStar, FaStar, FaRegClock, FaClock } from 'react-icons/fa';
 
@@ -20,7 +20,7 @@ export default function MovieGrid({ movies }: Props) {
 
 function MovieCard({ movie }: { movie: Movie }) {
   const [isFavorite, setIsFavorite] = useState(movie.isFavorite);
-  const [isWatchLater, setIsWatchLater] = useState(movie.isWatchLater);
+  const [isWatcher, setIsWatcher] = useState(movie.isWatcher);
 
   const toggleFavorite = async () => {
     const method = isFavorite ? 'DELETE' : 'POST';
@@ -29,9 +29,9 @@ function MovieCard({ movie }: { movie: Movie }) {
   };
 
   const toggleWatchLater = async () => {
-    const method = isWatchLater ? 'DELETE' : 'POST';
+    const method = isWatcher ? 'DELETE' : 'POST';
     await fetch(`/api/watch-later/${movie.id}`, { method });
-    setIsWatchLater(!isWatchLater);
+    setIsWatcher(!isWatcher);
   };
 
   return (
@@ -41,9 +41,9 @@ function MovieCard({ movie }: { movie: Movie }) {
       <div className="absolute inset-0 bg-black bg-opacity-60 opacity-0 group-hover:opacity-100 transition p-4 flex flex-col justify-between">
         <div>
           <h3 className="text-lg font-bold">{movie.title}</h3>
-          <p className="text-sm">{movie.description}</p>
+          <p className="text-sm">{movie.synopsis}</p>
           <p className="text-sm mt-1">
-            <strong>Year:</strong> {movie.releaseYear}
+            <strong>Year:</strong> {movie.released}
           </p>
           <p className="text-sm">
             <strong>Genres:</strong> {movie.genres.join(', ')}
@@ -55,7 +55,7 @@ function MovieCard({ movie }: { movie: Movie }) {
             {isFavorite ? <FaStar className="text-yellow-400" /> : <FaRegStar />}
           </button>
           <button onClick={toggleWatchLater}>
-            {isWatchLater ? <FaClock className="text-blue-300" /> : <FaRegClock />}
+            {isWatcher ? <FaClock className="text-blue-300" /> : <FaRegClock />}
           </button>
         </div>
       </div>
