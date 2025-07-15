@@ -1,12 +1,10 @@
-// lib/data/firebaseData.ts
-
 import { db } from '@/lib/firebase';
 import {
   doc,
   setDoc,
   deleteDoc,
   getDoc,
-  Firestore,
+  Timestamp,
 } from 'firebase/firestore';
 
 /**
@@ -15,7 +13,7 @@ import {
 export async function insertFavorite(userId: string, movieId: string): Promise<void> {
   const favoriteRef = doc(db, 'users', userId, 'favorites', movieId);
   await setDoc(favoriteRef, {
-    addedAt: Date.now(),
+    addedAt: Timestamp.now(),
   });
 }
 
@@ -34,4 +32,22 @@ export async function isFavorite(userId: string, movieId: string): Promise<boole
   const favoriteRef = doc(db, 'users', userId, 'favorites', movieId);
   const snapshot = await getDoc(favoriteRef);
   return snapshot.exists();
+}
+
+/**
+ * Add a movie to user's watch later
+ */
+export async function insertWatchLater(userId: string, movieId: string): Promise<void> {
+  const watchLaterRef = doc(db, 'users', userId, 'watchLater', movieId);
+  await setDoc(watchLaterRef, {
+    addedAt: Timestamp.now(),
+  });
+}
+
+/**
+ * Remove a movie from user's watch later
+ */
+export async function deleteWatchLater(userId: string, movieId: string): Promise<void> {
+  const watchLaterRef = doc(db, 'users', userId, 'watchLater', movieId);
+  await deleteDoc(watchLaterRef);
 }

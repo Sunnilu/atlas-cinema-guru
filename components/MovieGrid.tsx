@@ -1,10 +1,15 @@
 'use client';
 
-import type { Movie } from '@/lib/types';
-import { insertFavorite, deleteFavorite } from '@/lib/data/firebaseData';
-
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { FaRegStar, FaStar, FaRegClock, FaClock } from 'react-icons/fa';
+import type { Movie } from '@/lib/types';
+import {
+  insertFavorite,
+  deleteFavorite,
+  insertWatchLater,
+  deleteWatchLater,
+} from '@/lib/data/firebaseData';
 
 interface Props {
   movies: Movie[];
@@ -21,19 +26,37 @@ export default function MovieGrid({ movies }: Props) {
 }
 
 function MovieCard({ movie }: { movie: Movie }) {
-  const [isFavorite, setIsFavorite] = useState(movie.isFavorite);
-  const [isWatcher, setIsWatcher] = useState(movie.isWatcher);
+  const { data: session } = useSession();
+  const userEmail = session?.user?.email;
+  const [isFavorite, setIsFavorite] = useState(movie.isFavorite ?? false);
+  const [isWatcher, setIsWatcher] = useState(movie.isWatcher ?? false);
 
   const toggleFavorite = async () => {
-    const method = isFavorite ? 'DELETE' : 'POST';
-    await fetch(`/api/favorites/${movie.id}`, { method });
-    setIsFavorite(!isFavorite);
+    if (!userEmail) return;
+    try {
+      if (isFavorite) {
+        await deleteFavorite(movie.id.toString(), userEmail);
+      } else {
+        await insertFavorite(movie.id.toString(), userEmail);
+      }
+      setIsFavorite(!isFavorite);
+    } catch (err) {
+      console.error('Failed to toggle favorite:', err);
+    }
   };
 
   const toggleWatchLater = async () => {
-    const method = isWatcher ? 'DELETE' : 'POST';
-    await fetch(`/api/watch-later/${movie.id}`, { method });
-    setIsWatcher(!isWatcher);
+    if (!userEmail) return;
+    try {
+      if (isWatcher) {
+        await deleteWatchLater(movie.id.toString(), userEmail);
+      } else {
+        await insertWatchLater(movie.id.toString(), userEmail);
+      }
+      setIsWatcher(!isWatcher);
+    } catch (err) {
+      console.error('Failed to toggle watch later:', err);
+    }
   };
 
   return (
@@ -53,10 +76,10 @@ function MovieCard({ movie }: { movie: Movie }) {
         </div>
 
         <div className="flex gap-4 mt-2">
-          <button onClick={toggleFavorite}>
+          <button onClick={toggleFavorite} aria-label="Toggle Favorite">
             {isFavorite ? <FaStar className="text-yellow-400" /> : <FaRegStar />}
           </button>
-          <button onClick={toggleWatchLater}>
+          <button onClick={toggleWatchLater} aria-label="Toggle Watch Later">
             {isWatcher ? <FaClock className="text-blue-300" /> : <FaRegClock />}
           </button>
         </div>
