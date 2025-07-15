@@ -4,7 +4,7 @@ import { sql } from '@vercel/postgres';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 
-// Schema for movie data
+// ✅ Schema for movie data (not currently used but useful for validation later)
 const movieSchema = z.object({
   id: z.string(),
   title: z.string().min(1),
@@ -14,14 +14,14 @@ const movieSchema = z.object({
   genres: z.array(z.string())
 });
 
-// Schema for movie status
+// ✅ Schema for movie status return
 const movieStatusSchema = z.object({
   isFavorite: z.boolean(),
   isWatcher: z.boolean()
 });
 
 /**
- * Get whether a movie is favorited or in watch later for a user
+ * ✅ Check whether a movie is favorited or in watch later for a user
  */
 export async function getMovieStatus(userEmail: string, movieId: string) {
   try {
@@ -41,35 +41,39 @@ export async function getMovieStatus(userEmail: string, movieId: string) {
 }
 
 /**
- * Toggle a movie as favorite
+ * ✅ Toggle favorite status for a user and movie
  */
-export async function toggleFavorite(userEmail: string, movieId: string, isFavorite: boolean) {
+export async function toggleFavorite(userEmail: string, movieId: string, isCurrentlyFavorited: boolean) {
   try {
-    if (isFavorite) {
+    if (isCurrentlyFavorited) {
       await sql`DELETE FROM favorites WHERE user_id = ${userEmail} AND title_id = ${movieId}`;
     } else {
-      await sql`INSERT INTO favorites (user_id, title_id) VALUES (${userEmail}, ${movieId}) ON CONFLICT DO NOTHING`;
+      await sql`INSERT INTO favorites (user_id, title_id) VALUES (${userEmail}, ${movieId})`;
     }
-    revalidatePath('/api/movies/status');
+
+    revalidatePath('/');
+    revalidatePath('/favorites');
   } catch (error) {
-    console.error('Error toggling favorite:', error);
+    console.error('Error toggling favorite status:', error);
     throw new Error('Failed to toggle favorite');
   }
 }
 
 /**
- * Toggle a movie in watch later
+ * ✅ Toggle watch later status for a user and movie
  */
-export async function toggleWatchLater(userEmail: string, movieId: string, isWatcher: boolean) {
+export async function toggleWatchLater(userEmail: string, movieId: string, isCurrentlyInWatchLater: boolean) {
   try {
-    if (isWatcher) {
+    if (isCurrentlyInWatchLater) {
       await sql`DELETE FROM watchlater WHERE user_id = ${userEmail} AND title_id = ${movieId}`;
     } else {
-      await sql`INSERT INTO watchlater (user_id, title_id) VALUES (${userEmail}, ${movieId}) ON CONFLICT DO NOTHING`;
+      await sql`INSERT INTO watchlater (user_id, title_id) VALUES (${userEmail}, ${movieId})`;
     }
-    revalidatePath('/api/movies/status');
+
+    revalidatePath('/');
+    revalidatePath('/watch-later');
   } catch (error) {
-    console.error('Error toggling watch later:', error);
+    console.error('Error toggling watch later status:', error);
     throw new Error('Failed to toggle watch later');
   }
 }
