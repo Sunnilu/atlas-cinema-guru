@@ -2,9 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
 import { useSession } from "next-auth/react";
-import { db } from "@/lib/firebase"; // ensure this points to your Firestore instance
 
 type Activity = {
   title: string;
@@ -17,7 +15,7 @@ type Activity = {
 export default function Sidebar() {
   const [expanded, setExpanded] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const userEmail = session?.user?.email ?? null;
 
   useEffect(() => {
@@ -25,16 +23,8 @@ export default function Sidebar() {
 
     const fetchActivities = async () => {
       try {
-        const q = query(
-          collection(db, "activities"),
-          where("user", "==", userEmail),
-          orderBy("timestamp", "desc")
-        );
-        const querySnapshot = await getDocs(q);
-        const data: Activity[] = [];
-        querySnapshot.forEach((doc) => {
-          data.push(doc.data() as Activity);
-        });
+        const res = await fetch(`/api/activities?user=${encodeURIComponent(userEmail)}`);
+        const data = await res.json();
         setActivities(data);
       } catch (error) {
         console.error("❌ Error fetching activities:", error);
