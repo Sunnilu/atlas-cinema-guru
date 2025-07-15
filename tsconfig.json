@@ -20,7 +20,10 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@components/*": ["src/components/*"],
+      "@lib/*": ["src/lib/*"],
+      "@app/*": ["app/*"]
     },
     "typeRoots": ["./types", "./node_modules/@types"]
   },
@@ -29,7 +32,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "types",                // ✅ Add this line
+    "types",
     "seed/users.ts",
     "scripts/seed.js"
   ],
