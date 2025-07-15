@@ -1,8 +1,8 @@
 // components/MovieFilters.tsx
 'use client';
 
-import { useRouter, useSearchParams, usePathname } from 'next/navigation'; // Import usePathname
-import { useState, useEffect } from 'react'; // Import useEffect
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 interface MovieFiltersProps {
   genresList: string[];
@@ -11,21 +11,16 @@ interface MovieFiltersProps {
 export default function MovieFilters({ genresList }: MovieFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const pathname = usePathname(); // Get the current pathname
+  const pathname = usePathname();
 
-  // Initialize state from URL search parameters or defaults
-  // Note: For minYear/maxYear, converting to number is good for logic, but for input value, it's string
   const [title, setTitle] = useState(searchParams.get('title') || '');
   const [minYear, setMinYear] = useState(searchParams.get('minYear') || '');
   const [maxYear, setMaxYear] = useState(searchParams.get('maxYear') || '');
   const [selectedGenres, setSelectedGenres] = useState<string[]>(() => {
-    // Correctly get all genres from searchParams
     const genresParam = searchParams.get('genres');
     return genresParam ? genresParam.split(',') : [];
   });
 
-  // Use useEffect to sync internal state with URL on initial load/navigation
-  // This is important because searchParams can change without the component unmounting
   useEffect(() => {
     setTitle(searchParams.get('title') || '');
     setMinYear(searchParams.get('minYear') || '');
@@ -34,7 +29,7 @@ export default function MovieFilters({ genresList }: MovieFiltersProps) {
       const genresParam = searchParams.get('genres');
       return genresParam ? genresParam.split(',') : [];
     });
-  }, [searchParams]); // Rerun when searchParams object changes
+  }, [searchParams]);
 
   const handleGenreToggle = (genre: string) => {
     setSelectedGenres((prev) =>
@@ -45,9 +40,7 @@ export default function MovieFilters({ genresList }: MovieFiltersProps) {
   };
 
   const applyFilters = () => {
-    const params = new URLSearchParams(searchParams); // Start with existing params
-
-    // Reset to page 1 on new filter application
+    const params = new URLSearchParams(searchParams);
     params.set('page', '1');
 
     if (title) {
@@ -56,9 +49,8 @@ export default function MovieFilters({ genresList }: MovieFiltersProps) {
       params.delete('title');
     }
 
-    // Convert to number for comparison before setting/deleting
     const currentMinYear = parseInt(minYear);
-    const defaultMinYear = 1900; // Assuming a reasonable default
+    const defaultMinYear = 1900;
     if (!isNaN(currentMinYear) && currentMinYear !== defaultMinYear) {
       params.set('minYear', minYear);
     } else {
@@ -66,14 +58,13 @@ export default function MovieFilters({ genresList }: MovieFiltersProps) {
     }
 
     const currentMaxYear = parseInt(maxYear);
-    const defaultMaxYear = new Date().getFullYear(); // Assuming current year as default
+    const defaultMaxYear = new Date().getFullYear();
     if (!isNaN(currentMaxYear) && currentMaxYear !== defaultMaxYear) {
       params.set('maxYear', maxYear);
     } else {
       params.delete('maxYear');
     }
 
-    // Remove all previous 'genres' entries before appending new ones
     params.delete('genres');
     selectedGenres.forEach((g) => params.append('genres', g));
 
@@ -81,7 +72,7 @@ export default function MovieFilters({ genresList }: MovieFiltersProps) {
   };
 
   const clearFilters = () => {
-    router.push(pathname); // Navigate to base path to clear all filters
+    router.push(pathname);
     setTitle('');
     setMinYear('');
     setMaxYear('');
@@ -90,9 +81,9 @@ export default function MovieFilters({ genresList }: MovieFiltersProps) {
 
 
   return (
-    <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-5 p-4 rounded-lg shadow-md text-white bg-[#2a3148]"> {/* Main filter container */}
+    <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-5 p-4 rounded-lg shadow-md text-white bg-[#2a3148]">
       {/* Left side: Search and Dates */}
-      <div className="flex flex-col gap-4 md:w-1/2 lg:w-2/5"> {/* Left Filters Container */}
+      <div className="flex flex-col gap-4 md:w-1/2 lg:w-2/5">
         <div className="flex flex-col gap-2">
           <label htmlFor="title-search" className="text-sm font-medium">Search Title</label>
           <input
@@ -151,14 +142,14 @@ export default function MovieFilters({ genresList }: MovieFiltersProps) {
       </div>
 
       {/* Right side: Genres */}
-      <div className="flex flex-col gap-3 md:w-1/2 lg:w-3/5 md:text-right"> {/* Right Genres Container */}
-        <h3 className="text-lg font-semibold md:mb-1">Genres:</h3>
-        <div className="flex flex-wrap gap-2 justify-start md:justify-end"> {/* Genre Buttons Container */}
+      <div className="flex flex-col gap-3 md:w-1/2 lg:w-3/5"> {/* Removed md:text-right from here */}
+        <h3 className="text-lg font-semibold mb-2">Genres:</h3> {/* Added mb-2 for spacing */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 justify-items-start md:justify-items-end"> {/* Use grid for 5 columns */}
           {genresList.map((genre) => (
             <button
               key={genre}
               onClick={() => handleGenreToggle(genre)}
-              className={`px-4 py-2 rounded-full border border-gray-600 text-sm font-medium whitespace-nowrap transition-colors duration-200
+              className={`px-4 py-2 rounded-full border border-gray-600 text-sm font-medium whitespace-nowrap transition-colors duration-200 w-full text-center
                 ${selectedGenres.includes(genre) ? 'bg-[#00C896] text-[#1A2038] border-[#00C896]' : 'bg-gray-700 hover:bg-gray-600 text-white'}`
               }
             >
