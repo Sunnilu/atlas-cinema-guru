@@ -18,6 +18,7 @@ export type Movie = {
 // before it's transformed into the 'Movie' type for the UI.
 // This helps clarify the mapping process.
 export type RawFetchedMovie = {
+  synopsis: string;
   id: string;
   title: string;
   // This is the property name from your database query results (e.g., from db.selectFrom("titles").selectAll("titles"))
