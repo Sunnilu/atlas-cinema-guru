@@ -1,6 +1,8 @@
+// lib/data.ts
 import { sql } from "@vercel/postgres";
-import { Question, User } from "./definitions";
-import { db } from "./db";
+import { Question, User } from "./definitions"; // Assuming these are still needed
+import { db } from "./db"; // Your Kysely DB instance
+import { RawFetchedMovie } from "./types"; // Import the RawFetchedMovie type
 
 /**
  * Query all titles
@@ -12,7 +14,7 @@ export async function fetchTitles(
   query: string,
   genres: string[],
   userEmail: string
-) {
+): Promise<RawFetchedMovie[]> { // Explicitly type the return as RawFetchedMovie[]
   try {
     // Get favorites title ids
     const favorites = (
@@ -35,12 +37,11 @@ export async function fetchTitles(
     // Build dynamic query
     let queryBuilder = db
       .selectFrom("titles")
-      .selectAll("titles")
+      .selectAll("titles") // This selects columns as they are in the DB (e.g., synposis, genre, image)
       .where("titles.released", ">=", minYear)
       .where("titles.released", "<=", maxYear)
       .where("titles.title", "ilike", `%${query}%`);
 
-    // **Corrected logic for genres filter**
     if (genres.length > 0) {
       queryBuilder = queryBuilder.where("titles.genre", "in", genres);
     }
@@ -51,12 +52,19 @@ export async function fetchTitles(
       .offset((page - 1) * 6)
       .execute();
 
+    // Map the raw titles to add favorited/watchLater flags.
+    // The properties 'synposis', 'genre', 'image', 'id', 'title', 'released' are assumed
+    // to come directly from `selectAll("titles")`.
     return titles.map((row) => ({
-      ...row,
+      id: row.id,
+      title: row.title,
+      synposis: (row as any).synposis || null, // Accessing with 'any' to handle potential typo from DB
+      released: row.released,
+      genre: (row as any).genre || null, // Accessing with 'any' to handle potential singular name
+      image: `/images/${row.id}.webp`, // Using the hardcoded image path as in your original
       favorited: favorites.includes(row.id),
       watchLater: watchLater.includes(row.id),
-      image: `/images/${row.id}.webp`,
-    }));
+    })) as RawFetchedMovie[]; // Type assertion to ensure it conforms to RawFetchedMovie[]
   } catch (error) {
     console.error("Database Error:", error);
     throw new Error("Failed to fetch topics.");
@@ -66,7 +74,7 @@ export async function fetchTitles(
 /**
  * Get a users favorites list.
  */
-export async function fetchFavorites(page: number, userEmail: string) {
+export async function fetchFavorites(page: number, userEmail: string): Promise<RawFetchedMovie[]> { // Explicitly type the return
   try {
     const watchLater = (
       await db
@@ -78,7 +86,7 @@ export async function fetchFavorites(page: number, userEmail: string) {
 
     const titles = await db
       .selectFrom("titles")
-      .selectAll("titles")
+      .selectAll("titles") // Select all columns from titles
       .innerJoin("favorites", "titles.id", "favorites.title_id")
       .where("favorites.user_id", "=", userEmail)
       .orderBy("titles.released", "asc")
@@ -86,12 +94,17 @@ export async function fetchFavorites(page: number, userEmail: string) {
       .offset((page - 1) * 6)
       .execute();
 
+    // Map the raw titles to add favorited/watchLater flags.
     return titles.map((row) => ({
-      ...row,
-      favorited: true,
-      watchLater: watchLater.includes(row.id),
+      id: row.id,
+      title: row.title,
+      synposis: (row as any).synposis || null,
+      released: row.released,
+      genre: (row as any).genre || null,
       image: `/images/${row.id}.webp`,
-    }));
+      favorited: true, // Always true for favorites list
+      watchLater: watchLater.includes(row.id),
+    })) as RawFetchedMovie[]; // Type assertion to RawFetchedMovie[]
   } catch (error) {
     console.error("Database Error:", error);
     throw new Error("Failed to fetch favorites.");
@@ -144,7 +157,7 @@ export async function favoriteExists(title_id: string, userEmail: string) {
 /**
  * Get a users watch later list.
  */
-export async function fetchWatchLaters(page: number, userEmail: string) {
+export async function fetchWatchLaters(page: number, userEmail: string): Promise<RawFetchedMovie[]> { // Explicitly type the return
   try {
     const favorites = (
       await db
@@ -165,11 +178,15 @@ export async function fetchWatchLaters(page: number, userEmail: string) {
       .execute();
 
     return titles.map((row) => ({
-      ...row,
+      id: row.id,
+      title: row.title,
+      synposis: (row as any).synposis || null,
+      released: row.released,
+      genre: (row as any).genre || null,
+      image: `/images/${row.id}.webp`,
       favorited: favorites.includes(row.id),
       watchLater: true,
-      image: `/images/${row.id}.webp`,
-    }));
+    })) as RawFetchedMovie[]; // Type assertion to RawFetchedMovie[]
   } catch (error) {
     console.error("Database Error:", error);
     throw new Error("Failed to fetch watchLater.");

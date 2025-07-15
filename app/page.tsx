@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import MovieGrid from "@/components/MovieGrid";
 import MovieFilters from '@components/MovieFilters';
-import PaginationControls from '@components/PaginationControls';
+import PaginationControls from '@/components/PaginationControls';
 
 import { fetchTitles, fetchGenres } from "@/lib/data";
 
@@ -48,6 +48,7 @@ export default async function Page({ searchParams }: SearchParams) {
           ...movie,
           synopsis: movie.synposis ?? "",
           genres: movie.genre ? [movie.genre] : [],
+          image: movie.image ?? "",
         }))}
       />
 
