@@ -2,8 +2,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-// No need to import 'usePathname' explicitly, as createPageLink handles the path directly.
-import React from 'react'; // React is implicitly used by JSX, but good practice to import.
+import React from 'react';
 
 interface PaginationControlsProps {
   currentPage: number;
@@ -14,58 +13,56 @@ export default function PaginationControls({ currentPage, hasNextPage }: Paginat
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Your existing logic for creating the page link
   const createPageLink = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('page', newPage.toString());
-    // Assuming the base path is always '/' for pagination on the main page
     return `/?${params.toString()}`;
   };
 
   return (
-    <div className="flex justify-center items-center gap-x-5 gap-y-3 mt-10 flex-wrap"> {/* Adjusted gap and added flex-wrap */}
+    <div className="flex justify-center items-center gap-x-5 gap-y-3 mt-10 flex-wrap">
       {/* Previous Button */}
       {/* Show "Previous" button only if currentPage > 1 */}
-      {currentPage > 1 && (
-        <button
-          onClick={() => router.push(createPageLink(currentPage - 1))}
-          className="
-            w-[292px] h-[83px]
-            bg-[#2C3E50] text-[#E0E0E0]
-            border border-[#4A637B]
-            rounded-lg
-            text-xl font-bold
-            hover:bg-[#34495E] hover:border-[#5A738B]
-            transition-colors duration-200 ease-in-out
-            focus:outline-none focus:ring-2 focus:ring-[#00C896]
-          "
-        >
-          Previous
-        </button>
-      )}
+      <button
+        onClick={() => router.push(createPageLink(currentPage - 1))}
+        disabled={currentPage === 1} // Disabled prop to control visual state
+        className={`
+          w-[292px] h-[83px]
+          rounded-lg
+          text-xl font-bold
+          transition-colors duration-200 ease-in-out
+          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00C896] focus:ring-offset-[#1A2038]
+          ${currentPage === 1
+            ? 'bg-gray-700 text-gray-400 border border-gray-600 cursor-not-allowed' // Disabled style
+            : 'bg-[#00C896] text-[#1A2038] border border-[#00C896] hover:bg-[#00b380]' // Active style
+          }
+        `}
+      >
+        Previous
+      </button>
 
-      {/* Page Number Indicator (optional, but useful for user context) */}
+      {/* Page Number Indicator */}
       <span className="text-[#E0E0E0] text-xl font-bold">Page {currentPage}</span>
 
       {/* Next Button */}
       {/* Show "Next" button only if hasNextPage is true */}
-      {hasNextPage && (
-        <button
-          onClick={() => router.push(createPageLink(currentPage + 1))}
-          className="
-            w-[292px] h-[83px]
-            bg-[#2C3E50] text-[#E0E0E0]
-            border border-[#4A637B]
-            rounded-lg
-            text-xl font-bold
-            hover:bg-[#34495E] hover:border-[#5A738B]
-            transition-colors duration-200 ease-in-out
-            focus:outline-none focus:ring-2 focus:ring-[#00C896]
-          "
-        >
-          Next
-        </button>
-      )}
+      <button
+        onClick={() => router.push(createPageLink(currentPage + 1))}
+        disabled={!hasNextPage} // Disabled prop to control visual state
+        className={`
+          w-[292px] h-[83px]
+          rounded-lg
+          text-xl font-bold
+          transition-colors duration-200 ease-in-out
+          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00C896] focus:ring-offset-[#1A2038]
+          ${!hasNextPage
+            ? 'bg-gray-700 text-gray-400 border border-gray-600 cursor-not-allowed' // Disabled style
+            : 'bg-[#00C896] text-[#1A2038] border border-[#00C896] hover:bg-[#00b380]' // Active style
+          }
+        `}
+      >
+        Next
+      </button>
     </div>
   );
 }
