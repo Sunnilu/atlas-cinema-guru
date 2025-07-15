@@ -32,14 +32,20 @@ export async function fetchTitles(
         .execute()
     ).map((row) => row.title_id);
 
-    //Fetch titles
-    const titles = await db
+    // Build dynamic query
+    let queryBuilder = db
       .selectFrom("titles")
       .selectAll("titles")
       .where("titles.released", ">=", minYear)
       .where("titles.released", "<=", maxYear)
-      .where("titles.title", "ilike", `%${query}%`)
-      .where("titles.genre", "in", genres)
+      .where("titles.title", "ilike", `%${query}%`);
+
+    // **Corrected logic for genres filter**
+    if (genres.length > 0) {
+      queryBuilder = queryBuilder.where("titles.genre", "in", genres);
+    }
+
+    const titles = await queryBuilder
       .orderBy("titles.title", "asc")
       .limit(6)
       .offset((page - 1) * 6)
@@ -93,7 +99,7 @@ export async function fetchFavorites(page: number, userEmail: string) {
 }
 
 /**
- *  Add a title to a users favorites list.
+ * Add a title to a users favorites list.
  */
 export async function insertFavorite(title_id: string, userEmail: string) {
   try {
