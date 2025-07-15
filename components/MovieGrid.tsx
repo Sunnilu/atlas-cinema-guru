@@ -28,40 +28,47 @@ export default function MovieGrid({ movies }: Props) {
 function MovieCard({ movie }: { movie: Movie }) {
   const { data: session } = useSession();
   const userEmail = session?.user?.email;
+
   const [isFavorite, setIsFavorite] = useState(movie.isFavorite ?? false);
   const [isWatcher, setIsWatcher] = useState(movie.isWatcher ?? false);
 
   const toggleFavorite = async () => {
     if (!userEmail) return;
+
     try {
       if (isFavorite) {
-        await deleteFavorite(movie.id.toString(), userEmail);
+        await deleteFavorite(userEmail, movie.id.toString());
       } else {
-        await insertFavorite(movie.id.toString(), userEmail);
+        await insertFavorite(userEmail, movie.id.toString());
       }
       setIsFavorite(!isFavorite);
     } catch (err) {
-      console.error('Failed to toggle favorite:', err);
+      console.error('❌ Failed to toggle favorite:', err);
     }
   };
 
   const toggleWatchLater = async () => {
     if (!userEmail) return;
+
     try {
       if (isWatcher) {
-        await deleteWatchLater(movie.id.toString(), userEmail);
+        await deleteWatchLater(userEmail, movie.id.toString());
       } else {
-        await insertWatchLater(movie.id.toString(), userEmail);
+        await insertWatchLater(userEmail, movie.id.toString());
       }
       setIsWatcher(!isWatcher);
     } catch (err) {
-      console.error('Failed to toggle watch later:', err);
+      console.error('❌ Failed to toggle watch later:', err);
     }
   };
 
   return (
     <div className="relative group overflow-hidden rounded shadow-lg bg-gray-800 text-white">
-      <img src={movie.image} alt={movie.title} className="w-full h-64 object-cover" />
+      <img
+        src={movie.image}
+        alt={movie.title}
+        className="w-full h-64 object-cover"
+      />
 
       <div className="absolute inset-0 bg-black bg-opacity-60 opacity-0 group-hover:opacity-100 transition p-4 flex flex-col justify-between">
         <div>
@@ -76,11 +83,27 @@ function MovieCard({ movie }: { movie: Movie }) {
         </div>
 
         <div className="flex gap-4 mt-2">
-          <button onClick={toggleFavorite} aria-label="Toggle Favorite">
-            {isFavorite ? <FaStar className="text-yellow-400" /> : <FaRegStar />}
+          <button
+            onClick={toggleFavorite}
+            aria-label="Toggle Favorite"
+            className="text-xl"
+          >
+            {isFavorite ? (
+              <FaStar className="text-yellow-400" />
+            ) : (
+              <FaRegStar />
+            )}
           </button>
-          <button onClick={toggleWatchLater} aria-label="Toggle Watch Later">
-            {isWatcher ? <FaClock className="text-blue-300" /> : <FaRegClock />}
+          <button
+            onClick={toggleWatchLater}
+            aria-label="Toggle Watch Later"
+            className="text-xl"
+          >
+            {isWatcher ? (
+              <FaClock className="text-blue-300" />
+            ) : (
+              <FaRegClock />
+            )}
           </button>
         </div>
       </div>
