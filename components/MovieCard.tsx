@@ -4,8 +4,8 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useSession } from 'next-auth/react';
-import { FaRegStar, FaStar, FaRegClock, FaClock } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
+import { FaRegStar, FaStar, FaRegClock, FaClock } from 'react-icons/fa';
 
 import type { Movie } from '@/lib/types';
 import {
@@ -16,7 +16,7 @@ import {
 
 interface Props {
   movie: Movie;
-  onActionSuccess?: () => void | Promise<void>; // Properly typed optional callback
+  onActionSuccess?: () => void | Promise<void>;
 }
 
 export default function MovieCard({ movie, onActionSuccess }: Props) {
@@ -30,21 +30,16 @@ export default function MovieCard({ movie, onActionSuccess }: Props) {
 
   useEffect(() => {
     const fetchStatus = async () => {
-      if (!userEmail) {
-        setIsFavorite(false);
-        setIsWatcher(false);
-        return;
-      }
+      if (!userEmail) return;
       try {
         const status = await getMovieStatus(userEmail, movie.id.toString());
         setIsFavorite(status.isFavorite);
         setIsWatcher(status.isWatcher);
       } catch (error) {
         console.error('Error fetching movie status:', error);
-        setIsFavorite(false);
-        setIsWatcher(false);
       }
     };
+
     fetchStatus();
   }, [userEmail, movie.id]);
 
@@ -52,13 +47,14 @@ export default function MovieCard({ movie, onActionSuccess }: Props) {
     if (!userEmail || isLoading) return;
     setIsLoading(true);
     try {
-      setIsFavorite((prev) => !prev);
-      await toggleFavorite(userEmail, movie.id.toString(), isFavorite);
+      const nextFavorite = !isFavorite;
+      setIsFavorite(nextFavorite);
+      await toggleFavorite(userEmail, movie.id.toString(), nextFavorite);
       router.refresh();
       await onActionSuccess?.();
     } catch (error) {
       console.error('Favorite toggle failed:', error);
-      setIsFavorite((prev) => !prev);
+      setIsFavorite((prev) => !prev); // revert if failure
     } finally {
       setIsLoading(false);
     }
@@ -68,13 +64,14 @@ export default function MovieCard({ movie, onActionSuccess }: Props) {
     if (!userEmail || isLoading) return;
     setIsLoading(true);
     try {
-      setIsWatcher((prev) => !prev);
-      await toggleWatchLater(userEmail, movie.id.toString(), isWatcher);
+      const nextWatcher = !isWatcher;
+      setIsWatcher(nextWatcher);
+      await toggleWatchLater(userEmail, movie.id.toString(), nextWatcher);
       router.refresh();
       await onActionSuccess?.();
     } catch (error) {
       console.error('Watch later toggle failed:', error);
-      setIsWatcher((prev) => !prev);
+      setIsWatcher((prev) => !prev); // revert if failure
     } finally {
       setIsLoading(false);
     }
@@ -91,17 +88,21 @@ export default function MovieCard({ movie, onActionSuccess }: Props) {
         priority={false}
       />
 
-      <div className="
-        absolute inset-0 bg-gradient-to-t from-black/80 to-transparent p-4
-        flex flex-col justify-between opacity-0 group-hover:opacity-100
-        transition-opacity duration-300 ease-in-out
-      ">
+      {/* Overlay on hover */}
+      <div
+        className="
+          absolute inset-0 bg-gradient-to-t from-black/80 to-transparent p-4
+          flex flex-col justify-between opacity-0 group-hover:opacity-100
+          transition-opacity duration-300 ease-in-out
+        "
+      >
+        {/* Action buttons */}
         <div className="flex justify-end gap-x-2">
           <button
             onClick={handleFavorite}
             disabled={isLoading || !userEmail}
             className="p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors duration-200"
-            aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
           >
             {isFavorite ? (
               <FaStar size={20} className="text-yellow-400" />
@@ -113,7 +114,7 @@ export default function MovieCard({ movie, onActionSuccess }: Props) {
             onClick={handleWatchLater}
             disabled={isLoading || !userEmail}
             className="p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors duration-200"
-            aria-label={isWatcher ? "Remove from watch later" : "Add to watch later"}
+            aria-label={isWatcher ? 'Remove from watch later' : 'Add to watch later'}
           >
             {isWatcher ? (
               <FaClock size={20} className="text-blue-400" />
@@ -123,8 +124,11 @@ export default function MovieCard({ movie, onActionSuccess }: Props) {
           </button>
         </div>
 
+        {/* Movie info */}
         <div>
-          <h3 className="text-white text-lg font-bold mb-1">{movie.title} ({movie.released})</h3>
+          <h3 className="text-white text-lg font-bold mb-1">
+            {movie.title} ({movie.released})
+          </h3>
           <p className="text-gray-300 text-sm mb-2 line-clamp-3">{movie.synopsis}</p>
           <p className="text-gray-400 text-xs italic">
             {movie.genres?.length ? movie.genres.join(', ') : 'N/A Genre'}
