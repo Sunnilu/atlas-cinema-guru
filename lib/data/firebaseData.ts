@@ -51,3 +51,12 @@ export async function deleteWatchLater(userId: string, movieId: string): Promise
   const watchLaterRef = doc(db, 'users', userId, 'watchLater', movieId);
   await deleteDoc(watchLaterRef);
 }
+
+/**
+ * Check if a movie is in the user's watch later list
+ */
+export async function isWatchLater(userId: string, movieId: string): Promise<boolean> {
+  const watchLaterRef = doc(db, 'users', userId, 'watchLater', movieId);
+  const snapshot = await getDoc(watchLaterRef);
+  return snapshot.exists();
+}
