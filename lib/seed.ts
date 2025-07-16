@@ -1,7 +1,9 @@
 import { db } from "@vercel/postgres";
 import { titles } from "@/seed/titles";
 
-async function seedTitles(client: any) {
+// ⬇️ Create tables and insert movie data
+export async function seedTitles() {
+  const client = await db.connect();
   await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
 
   await client.sql`
@@ -29,9 +31,8 @@ async function seedTitles(client: any) {
   console.log("✅ Titles table seeded.");
 }
 
-async function seedFavorites(client: any) {
-  await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
-
+export async function seedFavorites() {
+  const client = await db.connect();
   await client.sql`
     CREATE TABLE IF NOT EXISTS favorites (
       id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -40,13 +41,11 @@ async function seedFavorites(client: any) {
       FOREIGN KEY (title_id) REFERENCES titles(id)
     );
   `;
-
   console.log("✅ Favorites table created.");
 }
 
-async function seedWatchLater(client: any) {
-  await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
-
+export async function seedWatchLater() {
+  const client = await db.connect();
   await client.sql`
     CREATE TABLE IF NOT EXISTS watchLater (
       id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -55,13 +54,11 @@ async function seedWatchLater(client: any) {
       FOREIGN KEY (title_id) REFERENCES titles(id)
     );
   `;
-
   console.log("✅ WatchLater table created.");
 }
 
-async function seedActivity(client: any) {
-  await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
-
+export async function seedActivity() {
+  const client = await db.connect();
   await client.sql`
     CREATE TABLE IF NOT EXISTS activities (
       id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -72,10 +69,10 @@ async function seedActivity(client: any) {
       FOREIGN KEY (title_id) REFERENCES titles(id)
     );
   `;
-
   console.log("✅ Activities table created.");
 }
 
+// Optional transaction helpers
 export async function commit() {
   const client = await db.connect();
   await client.sql`COMMIT;`;
@@ -87,22 +84,3 @@ export async function rollback() {
   await client.sql`ROLLBACK;`;
   console.log("🔁 Rollback complete.");
 }
-
-export { seedActivity };
-
-export default async function main() {
-  const client = await db.connect();
-
-  try {
-    console.log("🌱 Starting database seeding...");
-    await seedTitles(client);
-    await seedFavorites(client);
-    await seedWatchLater(client);
-    await seedActivity(client);
-    console.log("🌟 Seeding complete!");
-  } catch (err) {
-    console.error("❌ Seeding failed:", err);
-  }
-}
-
-main();
