@@ -1,31 +1,62 @@
-//app/api/movies/status/routes.ts
-import { sql } from '@vercel/postgres';
-import { NextResponse } from 'next/server';
+// lib/movieActions.ts
+"use server";
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const userEmail = searchParams.get('userEmail');
-  const movieId = searchParams.get('movieId');
+import { sql } from "@vercel/postgres";
+import { revalidatePath } from "next/cache";
 
-  if (!userEmail || !movieId) {
-    return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
-  }
-
+export async function getMovieStatus(userEmail: string, movieId: string) {
   try {
     const [favoriteResult, watchLaterResult] = await Promise.all([
       sql`SELECT 1 FROM favorites WHERE user_id = ${userEmail} AND title_id = ${movieId} LIMIT 1`,
       sql`SELECT 1 FROM watchlater WHERE user_id = ${userEmail} AND title_id = ${movieId} LIMIT 1`,
     ]);
 
-    const isFavorite =
-      !!(favoriteResult && favoriteResult.rows && favoriteResult.rows.length > 0);
-
-    const isWatcher =
-      !!(watchLaterResult && watchLaterResult.rows && watchLaterResult.rows.length > 0);
-
-    return NextResponse.json({ isFavorite, isWatcher });
+    return {
+      isFavorite: favoriteResult.rows.length > 0,
+      isWatcher: watchLaterResult.rows.length > 0,
+    };
   } catch (error) {
-    console.error("❌ Error in movie status API route:", error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("❌ Error fetching movie status:", error);
+    throw new Error("Failed to get movie status");
+  }
+}
+
+export async function toggleFavorite(
+  userEmail: string,
+  movieId: string,
+  isCurrentlyFavorited: boolean
+) {
+  try {
+    if (isCurrentlyFavorited) {
+      await sql`DELETE FROM favorites WHERE user_id = ${userEmail} AND title_id = ${movieId}`;
+    } else {
+      await sql`INSERT INTO favorites (user_id, title_id) VALUES (${userEmail}, ${movieId})`;
+    }
+
+    revalidatePath("/");
+    revalidatePath("/favorites");
+  } catch (error) {
+    console.error("❌ Error toggling favorite:", error);
+    throw new Error("Failed to toggle favorite");
+  }
+}
+
+export async function toggleWatchLater(
+  userEmail: string,
+  movieId: string,
+  isCurrentlyInWatchLater: boolean
+) {
+  try {
+    if (isCurrentlyInWatchLater) {
+      await sql`DELETE FROM watchlater WHERE user_id = ${userEmail} AND title_id = ${movieId}`;
+    } else {
+      await sql`INSERT INTO watchlater (user_id, title_id) VALUES (${userEmail}, ${movieId})`;
+    }
+
+    revalidatePath("/");
+    revalidatePath("/watch-later");
+  } catch (error) {
+    console.error("❌ Error toggling watch later:", error);
+    throw new Error("Failed to toggle watch later");
   }
 }
