@@ -1,9 +1,11 @@
-// lib/movieActions.ts
 "use server";
 
 import { sql } from "@vercel/postgres";
 import { revalidatePath } from "next/cache";
 
+/**
+ * Get whether a movie is favorited or in watch later for a user
+ */
 export async function getMovieStatus(userEmail: string, movieId: string) {
   try {
     const [favoriteResult, watchLaterResult] = await Promise.all([
@@ -12,8 +14,8 @@ export async function getMovieStatus(userEmail: string, movieId: string) {
     ]);
 
     return {
-      isFavorite: favoriteResult.rows.length > 0,
-      isWatcher: watchLaterResult.rows.length > 0,
+      isFavorite: !!favoriteResult?.rows?.length,
+      isWatcher: !!watchLaterResult?.rows?.length,
     };
   } catch (error) {
     console.error("❌ Error fetching movie status:", error);
@@ -21,6 +23,9 @@ export async function getMovieStatus(userEmail: string, movieId: string) {
   }
 }
 
+/**
+ * Toggle favorite status
+ */
 export async function toggleFavorite(
   userEmail: string,
   movieId: string,
@@ -41,6 +46,9 @@ export async function toggleFavorite(
   }
 }
 
+/**
+ * Toggle watch later status
+ */
 export async function toggleWatchLater(
   userEmail: string,
   movieId: string,

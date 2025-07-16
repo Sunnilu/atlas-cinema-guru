@@ -1,62 +1,34 @@
-// lib/movieActions.ts
-"use server";
-
+// app/api/movies/status/route.ts
 import { sql } from "@vercel/postgres";
-import { revalidatePath } from "next/cache";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function getMovieStatus(userEmail: string, movieId: string) {
+export async function POST(req: NextRequest) {
   try {
+    const { userEmail, movieId } = await req.json();
+
+    if (!userEmail || !movieId) {
+      return NextResponse.json(
+        { error: "Missing userEmail or movieId" },
+        { status: 400 }
+      );
+    }
+
     const [favoriteResult, watchLaterResult] = await Promise.all([
       sql`SELECT 1 FROM favorites WHERE user_id = ${userEmail} AND title_id = ${movieId} LIMIT 1`,
       sql`SELECT 1 FROM watchlater WHERE user_id = ${userEmail} AND title_id = ${movieId} LIMIT 1`,
     ]);
 
-    return {
+    const status = {
       isFavorite: favoriteResult.rows.length > 0,
       isWatcher: watchLaterResult.rows.length > 0,
     };
-  } catch (error) {
-    console.error("❌ Error fetching movie status:", error);
-    throw new Error("Failed to get movie status");
-  }
-}
 
-export async function toggleFavorite(
-  userEmail: string,
-  movieId: string,
-  isCurrentlyFavorited: boolean
-) {
-  try {
-    if (isCurrentlyFavorited) {
-      await sql`DELETE FROM favorites WHERE user_id = ${userEmail} AND title_id = ${movieId}`;
-    } else {
-      await sql`INSERT INTO favorites (user_id, title_id) VALUES (${userEmail}, ${movieId})`;
-    }
-
-    revalidatePath("/");
-    revalidatePath("/favorites");
-  } catch (error) {
-    console.error("❌ Error toggling favorite:", error);
-    throw new Error("Failed to toggle favorite");
-  }
-}
-
-export async function toggleWatchLater(
-  userEmail: string,
-  movieId: string,
-  isCurrentlyInWatchLater: boolean
-) {
-  try {
-    if (isCurrentlyInWatchLater) {
-      await sql`DELETE FROM watchlater WHERE user_id = ${userEmail} AND title_id = ${movieId}`;
-    } else {
-      await sql`INSERT INTO watchlater (user_id, title_id) VALUES (${userEmail}, ${movieId})`;
-    }
-
-    revalidatePath("/");
-    revalidatePath("/watch-later");
-  } catch (error) {
-    console.error("❌ Error toggling watch later:", error);
-    throw new Error("Failed to toggle watch later");
+    return NextResponse.json(status);
+  } catch (err) {
+    console.error("❌ Error checking movie status:", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
