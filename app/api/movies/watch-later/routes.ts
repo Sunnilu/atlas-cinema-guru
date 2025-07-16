@@ -1,31 +1,33 @@
-// app/api/movies/watch-later/route.ts
-import { NextRequest, NextResponse } from "next/server";
-import { sql } from "@vercel/postgres";
-import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
+import { insertWatchLater, deleteWatchLater, watchLaterExists } from "@/lib/data";
+import { NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
-  try {
-    const { userEmail, movieId, isCurrentlyInWatchLater } = await req.json();
+// POST /api/movies/watchlater
+export const POST = auth(async (req) => {
+  const session = req.auth;
 
-    // Validate input
-    if (!userEmail || !movieId) {
-      return NextResponse.json({ error: "Missing userEmail or movieId" }, { status: 400 });
-    }
-
-    // Toggle logic
-    if (isCurrentlyInWatchLater) {
-      await sql`DELETE FROM watchlater WHERE user_id = ${userEmail} AND title_id = ${movieId}`;
-    } else {
-      await sql`INSERT INTO watchlater (user_id, title_id) VALUES (${userEmail}, ${movieId})`;
-    }
-
-    // Revalidate client paths
-    revalidatePath("/");
-    revalidatePath("/watch-later");
-
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error("❌ Toggle Watch Later Error:", err);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-}
+
+  try {
+    const { title_id } = await req.json();
+    const userEmail = session.user.email;
+
+    const exists = await watchLaterExists(title_id, userEmail);
+
+    if (exists) {
+      await deleteWatchLater(title_id, userEmail);
+      return NextResponse.json({ message: "Removed from watch later" });
+    } else {
+      await insertWatchLater(title_id, userEmail);
+      return NextResponse.json({ message: "Added to watch later" });
+    }
+  } catch (error) {
+    console.error("❌ Error toggling watch later:", error);
+    return NextResponse.json(
+      { error: "Failed to toggle watch later status" },
+      { status: 500 }
+    );
+  }
+});
