@@ -1,6 +1,8 @@
+// lib/db.ts
 import { Generated } from "kysely";
 import { createKysely } from "@vercel/postgres-kysely";
 
+// Main Database interface definition
 export interface Database {
   titles: TitlesTable;
   users: UsersTable;
@@ -9,10 +11,11 @@ export interface Database {
   activities: ActivitiesTable;
 }
 
+// Individual table types
 export interface TitlesTable {
   id: Generated<string>;
   title: string;
-  synposis: string;
+  synopsis: string; // ✅ fixed typo from "synposis" to "synopsis"
   released: number;
   genre: string;
 }
@@ -26,14 +29,14 @@ export interface UsersTable {
 
 export interface FavoritesTable {
   id: Generated<string>;
-  title_id: Generated<string>;
-  user_id: Generated<string>;
+  title_id: string;
+  user_id: string;
 }
 
 export interface WatchLaterTable {
   id: Generated<string>;
-  title_id: Generated<string>;
-  user_id: Generated<string>;
+  title_id: string;
+  user_id: string;
 }
 
 export interface ActivitiesTable {
@@ -44,4 +47,5 @@ export interface ActivitiesTable {
   activity: "FAVORITED" | "WATCH_LATER";
 }
 
+// Create Kysely client
 export const db = createKysely<Database>();
