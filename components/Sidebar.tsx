@@ -5,11 +5,10 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 
 type Activity = {
+  id: string;
   title: string;
-  timestamp: {
-    seconds: number;
-  };
-  type: "favorite" | "watch-later";
+  timestamp: string; // ISO string
+  activity: "FAVORITED" | "WATCH_LATER";
 };
 
 export default function Sidebar() {
@@ -58,20 +57,16 @@ export default function Sidebar() {
             <h3 className="text-center text-base font-bold">Latest Activities</h3>
             <ul className="text-sm mt-2 space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
               {activities.length > 0 ? (
-                activities.map((log, index) => (
-                  <li key={index}>
-                    <div className="text-xs">
-                      {new Date(log.timestamp.seconds * 1000).toLocaleString()}
+                activities.map((log) => (
+                  <li key={log.id}>
+                    <div className="text-xs text-gray-700">
+                      {new Date(log.timestamp).toLocaleString()}
                     </div>
-                    <div>
-                      {log.type === "watch-later" ? (
-                        <>
-                          Added <strong>{log.title}</strong> to watch later
-                        </>
+                    <div className="text-sm">
+                      {log.activity === "WATCH_LATER" ? (
+                        <>Added <strong>{log.title}</strong> to watch later</>
                       ) : (
-                        <>
-                          Favorited <strong>{log.title}</strong>
-                        </>
+                        <>Favorited <strong>{log.title}</strong></>
                       )}
                     </div>
                   </li>
