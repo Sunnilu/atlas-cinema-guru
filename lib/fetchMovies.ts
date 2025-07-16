@@ -1,12 +1,18 @@
 import type { Movie } from "@/lib/types";
 
-// You can add pagination support later if needed
+/**
+ * Fetches all movies from the backend API.
+ * Works with both relative path (local) and absolute URL (production).
+ */
 export async function fetchMovies(): Promise<Movie[]> {
+  const baseURL = process.env.NEXT_PUBLIC_API_URL || "";
+  const url = `${baseURL}/api/movies`;
+
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/movies`);
-    
+    const res = await fetch(url);
+
     if (!res.ok) {
-      throw new Error(`Failed to fetch movies: ${res.statusText}`);
+      throw new Error(`Failed to fetch movies: ${res.status} ${res.statusText}`);
     }
 
     const data = await res.json();
