@@ -1,24 +1,30 @@
-import { NextResponse } from "next/server";
-import { sql } from "@vercel/postgres";
-import { revalidatePath } from "next/cache";
+// app/api/movies/favorite/route.ts
 
-export async function POST(req: Request) {
-  const { userEmail, movieId, isCurrentlyFavorited } = await req.json();
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { insertFavorite, deleteFavorite, favoriteExists } from "@/lib/data";
 
-  if (!userEmail || !movieId) {
-    return NextResponse.json({ error: "Missing data" }, { status: 400 });
+export async function POST(req: NextRequest) {
+  const session = await auth();
+
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { title_id } = await req.json();
+  const userEmail = session.user.email;
+
   try {
-    if (isCurrentlyFavorited) {
-      await sql`DELETE FROM favorites WHERE user_id = ${userEmail} AND title_id = ${movieId}`;
+    const exists = await favoriteExists(title_id, userEmail);
+    if (exists) {
+      await deleteFavorite(title_id, userEmail);
     } else {
-      await sql`INSERT INTO favorites (user_id, title_id) VALUES (${userEmail}, ${movieId})`;
+      await insertFavorite(title_id, userEmail);
     }
-    revalidatePath("/favorites");
+
     return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Failed to toggle favorite" }, { status: 500 });
+  } catch (error) {
+    console.error("❌ Error in favorite API:", error);
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
