@@ -7,11 +7,6 @@ import { useRouter } from 'next/navigation';
 import { FaRegStar, FaStar, FaRegClock, FaClock } from 'react-icons/fa';
 
 import type { Movie } from '@/lib/types';
-import {
-  toggleFavorite,
-  toggleWatchLater,
-  getMovieStatus,
-} from "@/lib/movieActions"; // ✅ this now works in client components
 
 interface Props {
   movie: Movie;
@@ -30,10 +25,12 @@ export default function MovieCard({ movie, onActionSuccess }: Props) {
   useEffect(() => {
     const fetchStatus = async () => {
       if (!userEmail) return;
+
       try {
-        const status = await getMovieStatus(userEmail, movie.id.toString());
-        setIsFavorite(status.isFavorite);
-        setIsWatcher(status.isWatcher);
+        const res = await fetch(`/api/movies/status?userEmail=${userEmail}&movieId=${movie.id}`);
+        const data = await res.json();
+        setIsFavorite(data.isFavorite);
+        setIsWatcher(data.isWatcher);
       } catch (error) {
         console.error('Error fetching movie status:', error);
       }
@@ -45,15 +42,22 @@ export default function MovieCard({ movie, onActionSuccess }: Props) {
   const handleFavorite = async () => {
     if (!userEmail || isLoading) return;
     setIsLoading(true);
+    const nextFavorite = !isFavorite;
+
     try {
-      const nextFavorite = !isFavorite;
       setIsFavorite(nextFavorite);
-      console.log('Toggling favorite:', {
-        userEmail,
-        movieId: movie.id,
-        nextFavorite,
+      console.log('Toggling favorite:', { userEmail, movieId: movie.id, nextFavorite });
+
+      await fetch('/api/movies/favorite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userEmail,
+          movieId: movie.id,
+          isCurrentlyFavorited: !nextFavorite,
+        }),
       });
-      await toggleFavorite(userEmail, movie.id.toString(), nextFavorite);
+
       router.refresh();
       await onActionSuccess?.();
     } catch (error) {
@@ -67,15 +71,22 @@ export default function MovieCard({ movie, onActionSuccess }: Props) {
   const handleWatchLater = async () => {
     if (!userEmail || isLoading) return;
     setIsLoading(true);
+    const nextWatcher = !isWatcher;
+
     try {
-      const nextWatcher = !isWatcher;
       setIsWatcher(nextWatcher);
-      console.log('Toggling watch later:', {
-        userEmail,
-        movieId: movie.id,
-        nextWatcher,
+      console.log('Toggling watch later:', { userEmail, movieId: movie.id, nextWatcher });
+
+      await fetch('/api/movies/watchlater', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userEmail,
+          movieId: movie.id,
+          isCurrentlyInWatchLater: !nextWatcher,
+        }),
       });
-      await toggleWatchLater(userEmail, movie.id.toString(), nextWatcher);
+
       router.refresh();
       await onActionSuccess?.();
     } catch (error) {
@@ -97,13 +108,11 @@ export default function MovieCard({ movie, onActionSuccess }: Props) {
         priority={false}
       />
 
-      <div
-        className="
-          absolute inset-0 bg-gradient-to-t from-black/80 to-transparent p-4
-          flex flex-col justify-between opacity-0 group-hover:opacity-100
-          transition-opacity duration-300 ease-in-out
-        "
-      >
+      <div className="
+        absolute inset-0 bg-gradient-to-t from-black/80 to-transparent p-4
+        flex flex-col justify-between opacity-0 group-hover:opacity-100
+        transition-opacity duration-300 ease-in-out
+      ">
         <div className="flex justify-end gap-x-2">
           <button
             onClick={handleFavorite}
