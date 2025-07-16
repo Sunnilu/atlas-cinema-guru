@@ -1,4 +1,3 @@
-// components/MovieCard.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,7 +11,7 @@ import {
   toggleFavorite,
   toggleWatchLater,
   getMovieStatus,
-} from '@/app/api/movies/routes';
+} from "@/lib/movieActions"; // ✅ this now works in client components
 
 interface Props {
   movie: Movie;
@@ -49,12 +48,17 @@ export default function MovieCard({ movie, onActionSuccess }: Props) {
     try {
       const nextFavorite = !isFavorite;
       setIsFavorite(nextFavorite);
+      console.log('Toggling favorite:', {
+        userEmail,
+        movieId: movie.id,
+        nextFavorite,
+      });
       await toggleFavorite(userEmail, movie.id.toString(), nextFavorite);
       router.refresh();
       await onActionSuccess?.();
     } catch (error) {
       console.error('Favorite toggle failed:', error);
-      setIsFavorite((prev) => !prev); // revert if failure
+      setIsFavorite((prev) => !prev);
     } finally {
       setIsLoading(false);
     }
@@ -66,12 +70,17 @@ export default function MovieCard({ movie, onActionSuccess }: Props) {
     try {
       const nextWatcher = !isWatcher;
       setIsWatcher(nextWatcher);
+      console.log('Toggling watch later:', {
+        userEmail,
+        movieId: movie.id,
+        nextWatcher,
+      });
       await toggleWatchLater(userEmail, movie.id.toString(), nextWatcher);
       router.refresh();
       await onActionSuccess?.();
     } catch (error) {
       console.error('Watch later toggle failed:', error);
-      setIsWatcher((prev) => !prev); // revert if failure
+      setIsWatcher((prev) => !prev);
     } finally {
       setIsLoading(false);
     }
@@ -88,7 +97,6 @@ export default function MovieCard({ movie, onActionSuccess }: Props) {
         priority={false}
       />
 
-      {/* Overlay on hover */}
       <div
         className="
           absolute inset-0 bg-gradient-to-t from-black/80 to-transparent p-4
@@ -96,7 +104,6 @@ export default function MovieCard({ movie, onActionSuccess }: Props) {
           transition-opacity duration-300 ease-in-out
         "
       >
-        {/* Action buttons */}
         <div className="flex justify-end gap-x-2">
           <button
             onClick={handleFavorite}
@@ -124,7 +131,6 @@ export default function MovieCard({ movie, onActionSuccess }: Props) {
           </button>
         </div>
 
-        {/* Movie info */}
         <div>
           <h3 className="text-white text-lg font-bold mb-1">
             {movie.title} ({movie.released})
