@@ -5,12 +5,7 @@ import { redirect } from "next/navigation";
 import PaginationControls from "@/components/PaginationControls";
 import { fetchWatchLaters } from "@/lib/data";
 import type { Movie } from "@/lib/types";
-import dynamic from "next/dynamic";
-
-// Dynamically import client-only MovieGridClient (handles reactivity and refresh)
-const MovieGridClient = dynamic(() => import("@/components/MovieGridClient"), {
-  ssr: false,
-});
+import MovieGridWrapper from "@/components/MovieGridWrapper";
 
 interface WatchLaterPageProps {
   searchParams?: Record<string, string | string[] | undefined>;
@@ -39,7 +34,7 @@ export default async function WatchLaterPage({ searchParams }: WatchLaterPagePro
         <p className="text-gray-300">No movies saved to Watch Later.</p>
       ) : (
         <>
-          <MovieGridClient movies={movies} />
+          <MovieGridWrapper movies={movies} />
 
           <PaginationControls
             currentPage={page}
