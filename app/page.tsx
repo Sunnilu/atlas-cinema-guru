@@ -45,7 +45,7 @@ export default async function Page({ searchParams }: PageProps) {
   const normalizedMovies: Movie[] = movies.map((movie) => ({
     ...movie,
     synopsis: movie.synopsis ?? "",
-    genres: movie.genre ? [movie.genre] : [],
+    genres: movie.genres ?? [],
     image: movie.image ?? "",
   }));
 
