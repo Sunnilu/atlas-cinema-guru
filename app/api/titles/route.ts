@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
  * GET /api/titles
  */
 export const GET = auth(async (req: NextRequest) => {
-  //@ts-ignore
+  // @ts-ignore
   if (!req.auth) {
     return NextResponse.json(
       { error: "Unauthorized - Not logged in" },
@@ -15,7 +15,7 @@ export const GET = auth(async (req: NextRequest) => {
   }
 
   const {
-    user: { email }, //@ts-ignore
+    user: { email }, // @ts-ignore
   } = req.auth;
 
   const params = req.nextUrl.searchParams;
@@ -25,11 +25,12 @@ export const GET = auth(async (req: NextRequest) => {
     ? Number(params.get("maxYear"))
     : new Date().getFullYear();
   const query = params.get("query") ?? "";
-  const genres = params.get("genres")?.split(",") ?? (await fetchGenres());
+  const genres =
+    params.get("genres")?.split(",") ?? (await fetchGenres());
 
-  const title = await fetchTitles(page, minYear, maxYear, query, genres, email);
+  const titles = await fetchTitles(page, minYear, maxYear, query, genres, email);
 
   return NextResponse.json({
-    title: title,
+    titles, // ✅ Corrected key
   });
 });
