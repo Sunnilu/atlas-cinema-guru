@@ -1,34 +1,21 @@
 // app/api/movies/status/route.ts
-import { sql } from "@vercel/postgres";
 import { NextRequest, NextResponse } from "next/server";
+import { getMovieStatus } from "@/lib/movieActions";
 
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const userEmail = searchParams.get("userEmail");
+  const movieId = searchParams.get("movieId");
+
+  if (!userEmail || !movieId) {
+    return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
+  }
+
   try {
-    const { userEmail, movieId } = await req.json();
-
-    if (!userEmail || !movieId) {
-      return NextResponse.json(
-        { error: "Missing userEmail or movieId" },
-        { status: 400 }
-      );
-    }
-
-    const [favoriteResult, watchLaterResult] = await Promise.all([
-      sql`SELECT 1 FROM favorites WHERE user_id = ${userEmail} AND title_id = ${movieId} LIMIT 1`,
-      sql`SELECT 1 FROM watchlater WHERE user_id = ${userEmail} AND title_id = ${movieId} LIMIT 1`,
-    ]);
-
-    const status = {
-      isFavorite: favoriteResult.rows.length > 0,
-      isWatcher: watchLaterResult.rows.length > 0,
-    };
-
+    const status = await getMovieStatus(userEmail, movieId);
     return NextResponse.json(status);
-  } catch (err) {
-    console.error("❌ Error checking movie status:", err);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error("❌ Failed to fetch movie status:", error);
+    return NextResponse.json({ error: "Failed to fetch movie status" }, { status: 500 });
   }
 }
