@@ -15,18 +15,23 @@ export default function Sidebar() {
   const [expanded, setExpanded] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(false);
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const userEmail = session?.user?.email ?? null;
 
   useEffect(() => {
-    if (!userEmail) return;
+    if (!userEmail || status !== "authenticated") return;
 
     const fetchActivities = async () => {
       setLoading(true);
       try {
         const res = await fetch("/api/activities");
         const data = await res.json();
-        setActivities(data);
+        setActivities(
+          (data.activities || []).sort(
+            (a: Activity, b: Activity) =>
+              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          )
+        );
       } catch (error) {
         console.error("❌ Error fetching activities:", error);
       } finally {
@@ -35,7 +40,7 @@ export default function Sidebar() {
     };
 
     fetchActivities();
-  }, [userEmail]);
+  }, [userEmail, status]);
 
   return (
     <aside
@@ -87,4 +92,3 @@ export default function Sidebar() {
     </aside>
   );
 }
-
