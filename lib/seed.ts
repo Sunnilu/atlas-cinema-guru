@@ -84,3 +84,11 @@ export async function rollback() {
   await client.sql`ROLLBACK;`;
   console.log("🔁 Rollback complete.");
 }
+
+export async function begin() {
+  const client = await db.connect();
+  await client.sql`BEGIN;`;
+  console.log("🔄 Transaction started.");
+
+
+}
