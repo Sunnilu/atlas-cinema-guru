@@ -5,37 +5,37 @@ import { redirect } from "next/navigation";
 import MovieGrid from "@/components/MovieGrid";
 import MovieFilters from "@/src/components/MovieFilters";
 import PaginationControls from "@/components/PaginationControls";
-
 import { fetchTitles, fetchGenres } from "@/lib/data";
 import type { Movie } from "@/lib/types";
 
 interface PageProps {
-  searchParams?: {
-    title?: string;
-    minYear?: string;
-    maxYear?: string;
-    genres?: string | string[];
-    page?: string;
-  };
+  searchParams?: Record<string, string | string[] | undefined>;
 }
 
-export default async function Page({ searchParams }: PageProps) {
+export default async function Page({ searchParams = {} }: PageProps) {
   const session = await auth();
   if (!session?.user?.email) {
     redirect("/login");
   }
 
-  const title = searchParams?.title ?? "";
-  const minYear = parseInt(searchParams?.minYear ?? "1900");
-  const maxYear = parseInt(searchParams?.maxYear ?? "2025");
-  const page = parseInt(searchParams?.page ?? "1");
+  const title = typeof searchParams.title === "string" ? searchParams.title : "";
+  const minYear = parseInt(
+    typeof searchParams.minYear === "string" ? searchParams.minYear : "1900"
+  );
+  const maxYear = parseInt(
+    typeof searchParams.maxYear === "string" ? searchParams.maxYear : "2025"
+  );
+  const page = parseInt(
+    typeof searchParams.page === "string" ? searchParams.page : "1"
+  );
 
-  const rawGenres = searchParams?.genres;
-  const genres = Array.isArray(rawGenres)
-    ? rawGenres
-    : rawGenres
-    ? [rawGenres]
-    : [];
+  const rawGenres = searchParams.genres;
+  const genres =
+    typeof rawGenres === "string"
+      ? [rawGenres]
+      : Array.isArray(rawGenres)
+      ? rawGenres
+      : [];
 
   const [movies, genresList] = await Promise.all([
     fetchTitles(page, minYear, maxYear, title, genres, session.user.email),
@@ -46,7 +46,7 @@ export default async function Page({ searchParams }: PageProps) {
     ...movie,
     synopsis: movie.synopsis ?? "",
     genres: movie.genres ?? [],
-    image: movie.image ?? "",
+    image: movie.image ?? `/images/${movie.id}.webp`,
   }));
 
   return (
