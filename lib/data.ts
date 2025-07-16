@@ -1,12 +1,9 @@
 // lib/data.ts
 import { sql } from "@vercel/postgres";
-import { Question, User } from "./definitions"; // Assuming these are still needed
-import { db } from "./db"; // Your Kysely DB instance
-import { RawFetchedMovie } from "./types"; // Import the RawFetchedMovie type
+import { Question, User } from "./definitions";
+import { db } from "./db";
+import { Movie } from "./types";
 
-/**
- * Query all titles
- */
 export async function fetchTitles(
   page: number,
   minYear: number,
@@ -14,9 +11,8 @@ export async function fetchTitles(
   query: string,
   genres: string[],
   userEmail: string
-): Promise<RawFetchedMovie[]> { // Explicitly type the return as RawFetchedMovie[]
+): Promise<Movie[]> {
   try {
-    // Get favorites title ids
     const favorites = (
       await db
         .selectFrom("favorites")
@@ -25,7 +21,6 @@ export async function fetchTitles(
         .execute()
     ).map((row) => row.title_id);
 
-    // Get watch later title ids
     const watchLater = (
       await db
         .selectFrom("watchlater")
@@ -34,10 +29,9 @@ export async function fetchTitles(
         .execute()
     ).map((row) => row.title_id);
 
-    // Build dynamic query
     let queryBuilder = db
       .selectFrom("titles")
-      .selectAll("titles") // This selects columns as they are in the DB (e.g., synposis, genre, image)
+      .selectAll("titles")
       .where("titles.released", ">=", minYear)
       .where("titles.released", "<=", maxYear)
       .where("titles.title", "ilike", `%${query}%`);
@@ -52,29 +46,23 @@ export async function fetchTitles(
       .offset((page - 1) * 6)
       .execute();
 
-    // Map the raw titles to add favorited/watchLater flags.
-    // The properties 'synposis', 'genre', 'image', 'id', 'title', 'released' are assumed
-    // to come directly from `selectAll("titles")`.
     return titles.map((row) => ({
       id: row.id,
       title: row.title,
-      synposis: (row as any).synposis || null, // Accessing with 'any' to handle potential typo from DB
+      synopsis: (row as any).synopsis || "",
       released: row.released,
-      genre: (row as any).genre || null, // Accessing with 'any' to handle potential singular name
-      image: `/images/${row.id}.webp`, // Using the hardcoded image path as in your original
-      favorited: favorites.includes(row.id),
-      watchLater: watchLater.includes(row.id),
-    })) as RawFetchedMovie[]; // Type assertion to ensure it conforms to RawFetchedMovie[]
+      genres: (row as any).genre ? [(row as any).genre] : [],
+      image: (row as any).image ? (row as any).image : `/images/${row.id}.webp`,
+      isFavorite: favorites.includes(row.id),
+      isWatcher: watchLater.includes(row.id),
+    }));
   } catch (error) {
     console.error("Database Error:", error);
-    throw new Error("Failed to fetch topics.");
+    throw new Error("Failed to fetch titles.");
   }
 }
 
-/**
- * Get a users favorites list.
- */
-export async function fetchFavorites(page: number, userEmail: string): Promise<RawFetchedMovie[]> { // Explicitly type the return
+export async function fetchFavorites(page: number, userEmail: string): Promise<Movie[]> {
   try {
     const watchLater = (
       await db
@@ -86,7 +74,7 @@ export async function fetchFavorites(page: number, userEmail: string): Promise<R
 
     const titles = await db
       .selectFrom("titles")
-      .selectAll("titles") // Select all columns from titles
+      .selectAll("titles")
       .innerJoin("favorites", "titles.id", "favorites.title_id")
       .where("favorites.user_id", "=", userEmail)
       .orderBy("titles.released", "asc")
@@ -94,30 +82,25 @@ export async function fetchFavorites(page: number, userEmail: string): Promise<R
       .offset((page - 1) * 6)
       .execute();
 
-    // Map the raw titles to add favorited/watchLater flags.
     return titles.map((row) => ({
       id: row.id,
       title: row.title,
-      synposis: (row as any).synposis || null,
+      synopsis: (row as any).synopsis || "",
       released: row.released,
-      genre: (row as any).genre || null,
-      image: `/images/${row.id}.webp`,
-      favorited: true, // Always true for favorites list
-      watchLater: watchLater.includes(row.id),
-    })) as RawFetchedMovie[]; // Type assertion to RawFetchedMovie[]
+      genres: (row as any).genre ? [(row as any).genre] : [],
+      image: (row as any).image ? (row as any).image : `/images/${row.id}.webp`,
+      isFavorite: true,
+      isWatcher: watchLater.includes(row.id),
+    }));
   } catch (error) {
     console.error("Database Error:", error);
     throw new Error("Failed to fetch favorites.");
   }
 }
 
-/**
- * Add a title to a users favorites list.
- */
 export async function insertFavorite(title_id: string, userEmail: string) {
   try {
-    const data =
-      await sql<Question>`INSERT INTO favorites (title_id, user_id) VALUES (${title_id}, ${userEmail})`;
+    const data = await sql<Question>`INSERT INTO favorites (title_id, user_id) VALUES (${title_id}, ${userEmail})`;
     insertActivity(title_id, userEmail, "FAVORITED");
     return data.rows;
   } catch (error) {
@@ -126,13 +109,9 @@ export async function insertFavorite(title_id: string, userEmail: string) {
   }
 }
 
-/**
- * Remove a title from a users favorites list.
- */
 export async function deleteFavorite(title_id: string, userEmail: string) {
   try {
-    const data =
-      await sql<Question>`DELETE FROM favorites WHERE title_id = ${title_id} AND user_id = ${userEmail}`;
+    const data = await sql<Question>`DELETE FROM favorites WHERE title_id = ${title_id} AND user_id = ${userEmail}`;
     return data.rows;
   } catch (error) {
     console.error("Database Error:", error);
@@ -140,13 +119,9 @@ export async function deleteFavorite(title_id: string, userEmail: string) {
   }
 }
 
-/**
- * Check if a title is in a users favorites list.
- */
 export async function favoriteExists(title_id: string, userEmail: string) {
   try {
-    const data =
-      await sql<Question>`SELECT * FROM favorites WHERE title_id = ${title_id} AND user_id = ${userEmail}`;
+    const data = await sql<Question>`SELECT * FROM favorites WHERE title_id = ${title_id} AND user_id = ${userEmail}`;
     return data.rows.length > 0;
   } catch (error) {
     console.error("Database Error:", error);
@@ -154,10 +129,7 @@ export async function favoriteExists(title_id: string, userEmail: string) {
   }
 }
 
-/**
- * Get a users watch later list.
- */
-export async function fetchWatchLaters(page: number, userEmail: string): Promise<RawFetchedMovie[]> { // Explicitly type the return
+export async function fetchWatchLaters(page: number, userEmail: string): Promise<Movie[]> {
   try {
     const favorites = (
       await db
@@ -180,80 +152,55 @@ export async function fetchWatchLaters(page: number, userEmail: string): Promise
     return titles.map((row) => ({
       id: row.id,
       title: row.title,
-      synposis: (row as any).synposis || null,
+      synopsis: (row as any).synopsis || "",
       released: row.released,
-      genre: (row as any).genre || null,
-      image: `/images/${row.id}.webp`,
-      favorited: favorites.includes(row.id),
-      watchLater: true,
-    })) as RawFetchedMovie[]; // Type assertion to RawFetchedMovie[]
+      genres: (row as any).genre ? [(row as any).genre] : [],
+      image: (row as any).image ? (row as any).image : `/images/${row.id}.webp`,
+      isFavorite: favorites.includes(row.id),
+      isWatcher: true,
+    }));
   } catch (error) {
     console.error("Database Error:", error);
-    throw new Error("Failed to fetch watchLater.");
+    throw new Error("Failed to fetch watch later list.");
   }
 }
 
-/**
- * Add a title to a users watch later list.
- */
 export async function insertWatchLater(title_id: string, userEmail: string) {
   try {
-    const data =
-      await sql<Question>`INSERT INTO watchLater (title_id, user_id) VALUES (${title_id}, ${userEmail})`;
-
+    const data = await sql<Question>`INSERT INTO watchLater (title_id, user_id) VALUES (${title_id}, ${userEmail})`;
     insertActivity(title_id, userEmail, "WATCH_LATER");
     return data.rows;
   } catch (error) {
     console.error("Database Error:", error);
-    throw new Error("Failed to add watchLater.");
+    throw new Error("Failed to add watch later.");
   }
 }
 
-/**
- * Remove a title from a users watch later list.
- */
 export async function deleteWatchLater(title_id: string, userEmail: string) {
   try {
-    const data =
-      await sql`DELETE FROM watchLater WHERE title_id = ${title_id} AND user_id = ${userEmail}`;
+    const data = await sql`DELETE FROM watchLater WHERE title_id = ${title_id} AND user_id = ${userEmail}`;
     return data.rows;
   } catch (error) {
     console.error("Database Error:", error);
-    throw new Error("Failed to add watchLater.");
+    throw new Error("Failed to delete watch later.");
   }
 }
 
-/**
- * Check if a movie title exists in a user's watch later list.
- */
-export async function watchLaterExists(
-  title_id: string,
-  userEmail: string
-): Promise<boolean> {
+export async function watchLaterExists(title_id: string, userEmail: string): Promise<boolean> {
   try {
-    const data =
-      await sql`SELECT * FROM watchLater WHERE title_id = ${title_id} AND user_id = ${userEmail}`;
+    const data = await sql`SELECT * FROM watchLater WHERE title_id = ${title_id} AND user_id = ${userEmail}`;
     return data.rows.length > 0;
   } catch (error) {
     console.error("Database Error:", error);
-    throw new Error("Failed to fetch watchLater.");
+    throw new Error("Failed to check watch later.");
   }
 }
 
-/**
- * Get all genres for titles.
- */
 export async function fetchGenres(): Promise<string[]> {
-  const data = await sql<{ genre: string }>`
-        SELECT DISTINCT titles.genre
-        FROM titles;
-      `;
+  const data = await sql<{ genre: string }>`SELECT DISTINCT titles.genre FROM titles;`;
   return data.rows.map((row) => row.genre);
 }
 
-/**
- * Get a users favorites list.
- */
 export async function fetchActivities(page: number, userEmail: string) {
   try {
     const activities = await db
@@ -274,7 +221,7 @@ export async function fetchActivities(page: number, userEmail: string) {
     return activities;
   } catch (error) {
     console.error("Database Error:", error);
-    throw new Error("Failed to fetch favorites.");
+    throw new Error("Failed to fetch activities.");
   }
 }
 
@@ -284,8 +231,7 @@ async function insertActivity(
   activity: "FAVORITED" | "WATCH_LATER"
 ) {
   try {
-    const data =
-      await sql<Question>`INSERT INTO activities (title_id, user_id, activity) VALUES (${title_id}, ${userEmail}, ${activity})`;
+    const data = await sql<Question>`INSERT INTO activities (title_id, user_id, activity) VALUES (${title_id}, ${userEmail}, ${activity})`;
     return data.rows;
   } catch (error) {
     console.error("Database Error:", error);
