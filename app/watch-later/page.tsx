@@ -7,15 +7,13 @@ import { fetchWatchLaters } from "@/lib/data";
 import type { Movie } from "@/lib/types";
 import dynamic from "next/dynamic";
 
-// Dynamically import the client-side MovieGrid wrapper
+// Dynamically import client-only MovieGridClient (handles reactivity and refresh)
 const MovieGridClient = dynamic(() => import("@/components/MovieGridClient"), {
   ssr: false,
 });
 
 interface WatchLaterPageProps {
-  searchParams?: {
-    page?: string;
-  };
+  searchParams?: Record<string, string | string[] | undefined>;
 }
 
 export default async function WatchLaterPage({ searchParams }: WatchLaterPageProps) {
@@ -25,7 +23,12 @@ export default async function WatchLaterPage({ searchParams }: WatchLaterPagePro
     redirect("/login");
   }
 
-  const page = parseInt(searchParams?.page || "1", 10);
+  const pageParam = Array.isArray(searchParams?.page)
+    ? searchParams?.page[0]
+    : searchParams?.page;
+
+  const page = parseInt(pageParam || "1", 10);
+
   const movies: Movie[] = await fetchWatchLaters(page, session.user.email);
 
   return (
