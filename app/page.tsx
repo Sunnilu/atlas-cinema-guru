@@ -1,4 +1,5 @@
 // app/page.tsx
+
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import MovieGrid from "@/components/MovieGrid";
@@ -24,10 +25,10 @@ export default async function Page({ searchParams }: PageProps) {
     redirect("/login");
   }
 
-  const title = searchParams?.title || "";
-  const minYear = parseInt(searchParams?.minYear || "1900");
-  const maxYear = parseInt(searchParams?.maxYear || "2025");
-  const page = parseInt(searchParams?.page || "1");
+  const title = searchParams?.title ?? "";
+  const minYear = parseInt(searchParams?.minYear ?? "1900");
+  const maxYear = parseInt(searchParams?.maxYear ?? "2025");
+  const page = parseInt(searchParams?.page ?? "1");
 
   const rawGenres = searchParams?.genres;
   const genres = Array.isArray(rawGenres)
