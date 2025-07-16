@@ -19,6 +19,8 @@ export const GET = auth(async (req: NextRequest & { auth: Session | null }) => {
 
   try {
     const activities = await fetchActivities(page, session.user.email);
+
+    // ✅ Return array directly for frontend compatibility
     return NextResponse.json(activities);
   } catch (error) {
     console.error("❌ Failed to fetch activities:", error);
