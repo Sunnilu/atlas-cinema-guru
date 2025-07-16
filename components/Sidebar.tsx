@@ -14,6 +14,7 @@ type Activity = {
 export default function Sidebar() {
   const [expanded, setExpanded] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(false);
   const { data: session } = useSession();
   const userEmail = session?.user?.email ?? null;
 
@@ -21,12 +22,15 @@ export default function Sidebar() {
     if (!userEmail) return;
 
     const fetchActivities = async () => {
+      setLoading(true);
       try {
-        const res = await fetch(`/api/activities?user=${encodeURIComponent(userEmail)}`);
+        const res = await fetch("/api/activities");
         const data = await res.json();
         setActivities(data);
       } catch (error) {
         console.error("❌ Error fetching activities:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -56,7 +60,9 @@ export default function Sidebar() {
           <div className="mt-8">
             <h3 className="text-center text-base font-bold">Latest Activities</h3>
             <ul className="text-sm mt-2 space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
-              {activities.length > 0 ? (
+              {loading ? (
+                <li className="text-xs italic text-gray-500">Loading...</li>
+              ) : activities.length > 0 ? (
                 activities.map((log) => (
                   <li key={log.id}>
                     <div className="text-xs text-gray-700">
@@ -64,7 +70,7 @@ export default function Sidebar() {
                     </div>
                     <div className="text-sm">
                       {log.activity === "WATCH_LATER" ? (
-                        <>Added <strong>{log.title}</strong> to watch later</>
+                        <>Added <strong>{log.title}</strong> to Watch Later</>
                       ) : (
                         <>Favorited <strong>{log.title}</strong></>
                       )}
@@ -81,3 +87,4 @@ export default function Sidebar() {
     </aside>
   );
 }
+
