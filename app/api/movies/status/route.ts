@@ -1,28 +1,24 @@
-// app/api/movies/status/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { auth } from "@/auth";
+import { favoriteExists, watchLaterExists } from "@/lib/data";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const userEmail = searchParams.get('userEmail');
-  const movieId = searchParams.get('movieId');
+/**
+ * GET /api/movies/status?userEmail=...&movieId=...
+ */
+export const GET = auth(async (req: NextRequest) => {
+  const url = req.nextUrl;
+  const userEmail = url.searchParams.get("userEmail");
+  const movieId = url.searchParams.get("movieId");
 
   if (!userEmail || !movieId) {
-    return NextResponse.json({ error: 'Missing userEmail or movieId' }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing userEmail or movieId" },
+      { status: 400 }
+    );
   }
 
-  try {
-    const [favoriteResult, watchLaterResult] = await Promise.all([
-      sql`SELECT 1 FROM favorites WHERE user_id = ${userEmail} AND title_id = ${movieId} LIMIT 1`,
-      sql`SELECT 1 FROM watchlater WHERE user_id = ${userEmail} AND title_id = ${movieId} LIMIT 1`,
-    ]);
+  const isFavorite = await favoriteExists(movieId, userEmail);
+  const isWatcher = await watchLaterExists(movieId, userEmail);
 
-    return NextResponse.json({
-      isFavorite: favoriteResult.rows.length > 0,
-      isWatcher: watchLaterResult.rows.length > 0,
-    });
-  } catch (error) {
-    console.error('❌ Error fetching movie status:', error);
-    return NextResponse.json({ error: 'Failed to fetch movie status' }, { status: 500 });
-  }
-}
+  return NextResponse.json({ isFavorite, isWatcher });
+});
