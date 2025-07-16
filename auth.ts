@@ -1,27 +1,33 @@
-// auth.tsx (renamed from auth.ts for JSX support if needed)
+// auth.ts
 
-import NextAuth from "next-auth"
-import GitHubProvider from "next-auth/providers/github"
-import type { NextAuthConfig } from "next-auth"
+import NextAuth from "next-auth";
+import GitHubProvider from "next-auth/providers/github";
+import type { NextAuthConfig } from "next-auth";
 
 export const config: NextAuthConfig = {
+  secret: process.env.NEXTAUTH_SECRET, // ✅ Required for secure sessions
+
   theme: {
     brandColor: "#1ED2AF",
     logo: "/logo.png",
     buttonText: "#ffffff",
   },
+
   providers: [
     GitHubProvider({
       clientId: process.env.GITHUB_ID!,
       clientSecret: process.env.GITHUB_SECRET!,
     }),
   ],
+
   pages: {
     signIn: "/login",
   },
+
   session: {
     strategy: "jwt",
   },
+
   callbacks: {
     authorized({ auth }) {
       return !!auth?.user;
@@ -42,12 +48,11 @@ export const config: NextAuthConfig = {
       return session;
     },
   },
-}
+};
 
 export const { handlers, signIn, signOut, auth } = NextAuth(config);
 
-// Add TypeScript module augmentation
-
+// TypeScript module augmentation
 declare module "next-auth" {
   interface Session {
     accessToken?: string;
