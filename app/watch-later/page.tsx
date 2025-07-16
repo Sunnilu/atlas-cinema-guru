@@ -1,10 +1,16 @@
 // app/watch-later/page.tsx
+
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import MovieCard from "@/components/MovieCard";
 import PaginationControls from "@/components/PaginationControls";
 import { fetchWatchLaters } from "@/lib/data";
 import type { Movie } from "@/lib/types";
+import dynamic from "next/dynamic";
+
+// Dynamically import the client-side MovieGrid wrapper
+const MovieGridClient = dynamic(() => import("@/components/MovieGridClient"), {
+  ssr: false,
+});
 
 interface WatchLaterPageProps {
   searchParams?: {
@@ -14,6 +20,7 @@ interface WatchLaterPageProps {
 
 export default async function WatchLaterPage({ searchParams }: WatchLaterPageProps) {
   const session = await auth();
+
   if (!session?.user?.email) {
     redirect("/login");
   }
@@ -29,11 +36,7 @@ export default async function WatchLaterPage({ searchParams }: WatchLaterPagePro
         <p className="text-gray-300">No movies saved to Watch Later.</p>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {movies.map((movie) => (
-              <MovieCard key={movie.id} movie={movie} />
-            ))}
-          </div>
+          <MovieGridClient movies={movies} />
 
           <PaginationControls
             currentPage={page}
