@@ -11,16 +11,16 @@ interface WatchLaterPageProps {
   searchParams?: Record<string, string | string[] | undefined>;
 }
 
-export default async function WatchLaterPage({ searchParams }: WatchLaterPageProps) {
+export default async function WatchLaterPage({ searchParams = {} }: WatchLaterPageProps) {
   const session = await auth();
 
   if (!session?.user?.email) {
     redirect("/login");
   }
 
-  const pageParam = Array.isArray(searchParams?.page)
+  const pageParam = Array.isArray(searchParams.page)
     ? searchParams.page[0]
-    : searchParams?.page;
+    : searchParams.page;
 
   const page = parseInt(pageParam || "1", 10);
   const movies: Movie[] = await fetchWatchLaters(page, session.user.email);
@@ -43,6 +43,7 @@ export default async function WatchLaterPage({ searchParams }: WatchLaterPagePro
           <PaginationControls
             currentPage={page}
             hasNextPage={movies.length >= 8}
+            basePath="/watch-later"
           />
         </>
       )}
